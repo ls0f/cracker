@@ -27,6 +27,5 @@ _testmain.go
 *.out
 
 # External packages folder
-vendor/
 server/server
 .idea/*
