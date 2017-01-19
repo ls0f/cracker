@@ -44,6 +44,7 @@ func handleConn(conn net.Conn, raddr, secret string) {
 		return
 	}
 
+	log.Printf("will connect %s ... \n", addr)
 	lp, err := proxy.Connect(raddr, addr, secret)
 	if err != nil {
 		log.Println(err)

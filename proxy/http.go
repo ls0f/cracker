@@ -171,8 +171,8 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	host := r.Header.Get("DST_HOST")
-	port := r.Header.Get("DST_PORT")
+	host := r.Header.Get("DSTHOST")
+	port := r.Header.Get("DSTPORT")
 	addr := fmt.Sprintf("%s:%s", host, port)
 	log.Printf("Connecting to %s:...\n", addr)
 	remote, err := net.DialTimeout("tcp", addr, time.Duration(time.Second*timeout))

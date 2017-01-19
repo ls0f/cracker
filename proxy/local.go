@@ -67,8 +67,8 @@ func (c *localProxyConn) connect(dstHost, dstPort string) (uuid string, err erro
 	hc := &http.Client{Transport: tr, Timeout: time.Duration(time.Second * heartTTL)}
 	req, _ := http.NewRequest("GET", c.server+CONNECT, nil)
 	c.gen_sign(req)
-	req.Header.Set("DST_HOST", dstHost)
-	req.Header.Set("DST_PORT", dstPort)
+	req.Header.Set("DSTHOST", dstHost)
+	req.Header.Set("DSTPORT", dstPort)
 	res, err := hc.Do(req)
 	if err != nil {
 		return "", err
