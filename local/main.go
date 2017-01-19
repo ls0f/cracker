@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cracker/proxy"
+	"github.com/lovedboy/cracker/proxy"
 	"flag"
 	"io"
 	"log"
