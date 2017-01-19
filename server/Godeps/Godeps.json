@@ -1,0 +1,21 @@
+{
+	"ImportPath": "github.com/lovedboy/cracker/server",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v77",
+	"Deps": [
+		{
+			"ImportPath": "github.com/lovedboy/cracker/proxy",
+			"Rev": "4e0b0e976c12b196d14db4c9751f081b0a00ed7a"
+		},
+		{
+			"ImportPath": "github.com/pborman/uuid",
+			"Comment": "v1.0-21-g1b00554",
+			"Rev": "1b00554d822231195d1babd97ff4a781231955c9"
+		},
+		{
+			"ImportPath": "gopkg.in/bufio.v1",
+			"Comment": "v1",
+			"Rev": "567b2bfa514e796916c4747494d6ff5132a1dfce"
+		}
+	]
+}
