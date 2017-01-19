@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/lovedboy/cracker/proxy"
 	"flag"
 	"io"
 	"log"
 	"net"
 	"strconv"
+
+	"github.com/lovedboy/cracker/proxy"
 )
 
 func handleConn(conn net.Conn, raddr, secret string) {

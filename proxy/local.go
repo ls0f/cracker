@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/elastic/go-lumber/log"
 	"gopkg.in/bufio.v1"
 )
 

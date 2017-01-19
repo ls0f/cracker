@@ -14,7 +14,8 @@ import (
 
 	"errors"
 
-	"github.com/anacrolix/sync"
+	"sync"
+
 	"github.com/pborman/uuid"
 	"gopkg.in/bufio.v1"
 )

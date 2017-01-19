@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/lovedboy/cracker/proxy"
 	"flag"
+
+	"github.com/lovedboy/cracker/proxy"
 )
 
 func main() {
