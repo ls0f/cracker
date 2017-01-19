@@ -105,7 +105,7 @@ func (c *localProxyConn) pull() ([]byte, error) {
 		case HeadQuit:
 			return nil, errors.New("should quit")
 		default:
-			return nil, errors.New(fmt.Sprintf("status code is %d", res.StatusCode))
+			return nil, errors.New(fmt.Sprintf("status code is %d, body is: %s", res.StatusCode, string(body)))
 
 		}
 	}
