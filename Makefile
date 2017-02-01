@@ -25,9 +25,10 @@ fmt:
 	done
 
 build:
+	mkdir -p bin;\
 	echo ==================================; \
 	for m in $(BIN); do \
-		cd $(PWD)/$$m && go build --race ; \
+		cd $(PWD)/$$m && go build -o ../bin/$$m --race ; \
 	done
 	echo ==================================; \
 

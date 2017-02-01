@@ -29,3 +29,4 @@ _testmain.go
 # External packages folder
 server/server
 .idea/*
+bin/
