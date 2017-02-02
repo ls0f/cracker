@@ -190,6 +190,8 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		pc.work()
+		remote.Close()
+		log.Printf("close connection with %s ... \n", remote.RemoteAddr().String())
 		log.Printf("delete uuid:%s ... \n", proxyID)
 		hp.Lock()
 		delete(hp.proxyMap, proxyID)
