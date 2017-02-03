@@ -5,7 +5,7 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/lovedboy/cracker/proxy",
-			"Rev": "4e0b0e976c12b196d14db4c9751f081b0a00ed7a"
+			"Rev": "ae4f5524bf5856e5e0441f00d66b3953757bfe17"
 		},
 		{
 			"ImportPath": "github.com/pborman/uuid",

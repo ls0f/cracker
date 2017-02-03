@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+const (
+	sendTimeOut = 3
+)
+
 type dataBodyTyp struct {
 	typ  string
 	body []byte
@@ -25,22 +29,29 @@ func newProxyConn(remote net.Conn, uuid string) *proxyConn {
 	}
 }
 
+func (pc *proxyConn) sendMsg(body dataBodyTyp) {
+	select {
+	case pc.readChannel <- body:
+	case <-time.After(time.Second * sendTimeOut):
+	}
+}
+
 func (pc *proxyConn) work() {
 
 	go func() {
 		for {
 			buf := make([]byte, 1024)
-			pc.remote.SetReadDeadline(time.Now().Add(timeout * 1e9))
+			pc.remote.SetReadDeadline(time.Now().Add(timeout * time.Second))
 			n, err := pc.remote.Read(buf)
 			if n > 0 {
-				pc.readChannel <- dataBodyTyp{typ: DATA_TYP, body: buf[:n]}
+				pc.sendMsg(dataBodyTyp{typ: DATA_TYP, body: buf[:n]})
 			}
 			if err != nil {
 				if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
-					pc.readChannel <- dataBodyTyp{typ: HEART_TYP}
+					pc.sendMsg(dataBodyTyp{typ: HEART_TYP})
 				} else {
 					close(pc.close)
-					pc.readChannel <- dataBodyTyp{typ: QUIT_TYP}
+					pc.sendMsg(dataBodyTyp{typ: QUIT_TYP})
 					return
 
 				}
@@ -68,5 +79,4 @@ func (pc *proxyConn) work() {
 
 		}
 	}
-	defer pc.remote.Close()
 }
