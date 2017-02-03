@@ -32,6 +32,3 @@ build:
 	done
 	echo ==================================; \
 
-
-heroku:
-	git subtree push --prefix server heroku master
