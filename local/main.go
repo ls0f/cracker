@@ -5,9 +5,8 @@ import (
 	"io"
 	"log"
 	"net"
+	"proxy"
 	"strconv"
-
-	"github.com/lovedboy/cracker/proxy"
 )
 
 func handleConn(conn net.Conn, raddr, secret string) {

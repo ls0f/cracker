@@ -1,18 +1,20 @@
 
+export GOPATH=$(PWD)
 
-MODULES := proxy server local
+MODULES := proxy
 BIN := server local
 
 vendor:
 	for m in $(MODULES) ; do \
-	cd $$m && go get -insecure -v && cd -;\
+	cd src/$$m && go get -insecure -v && cd -;\
 	done
+	go get github.com/stretchr/testify
 
 
 test:
 	echo ==================================; \
 	for m in $(MODULES); do \
-		cd $(PWD)/$$m && go test --race -cover; \
+		cd $(PWD)/src/$$m && go test --race -cover; \
 		echo ==================================; \
 	done
 

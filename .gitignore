@@ -30,3 +30,5 @@ _testmain.go
 server/server
 .idea/*
 bin/
+src/github.com/
+src/gopkg.in/

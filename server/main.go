@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"github.com/lovedboy/cracker/proxy"
+	"proxy"
 )
 
 func main() {
