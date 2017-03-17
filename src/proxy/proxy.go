@@ -7,6 +7,7 @@ import (
 
 const (
 	sendTimeOut = 3
+	bufSize = 10240
 )
 
 type dataBodyTyp struct {
@@ -40,7 +41,7 @@ func (pc *proxyConn) work() {
 
 	go func() {
 		for {
-			buf := make([]byte, 1024)
+			buf := make([]byte, bufSize)
 			pc.remote.SetReadDeadline(time.Now().Add(timeout * time.Second))
 			n, err := pc.remote.Read(buf)
 			if n > 0 {
