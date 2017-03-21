@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/http"
 )
@@ -26,8 +25,8 @@ func WriteHTTPOK(w http.ResponseWriter, data string) {
 
 func WriteHTTPData(w http.ResponseWriter, data []byte) {
 	w.WriteHeader(HeadData)
-	data_encoded := base64.StdEncoding.EncodeToString(data)
-	fmt.Fprintf(w, "%s", data_encoded)
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Write(data)
 }
 
 func WriteHTTPQuit(w http.ResponseWriter, data string) {

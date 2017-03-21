@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -44,10 +43,11 @@ func (c *localProxyConn) gen_sign(req *http.Request) {
 
 func (c *localProxyConn) push(data []byte, typ string) error {
 	hc := &http.Client{Transport: tr, Timeout: time.Duration(time.Second * heartTTL)}
-	buf := bufio.NewBufferString(base64.StdEncoding.EncodeToString(data))
+	buf := bufio.NewBuffer(data)
 	req, _ := http.NewRequest("POST", c.server+PUSH, buf)
 	c.gen_sign(req)
 	req.Header.Set("TYP", typ)
+	req.Header.Set("Content-Type", "image/jpeg")
 	res, err := hc.Do(req)
 	if err != nil {
 		return err
@@ -60,7 +60,6 @@ func (c *localProxyConn) push(data []byte, typ string) error {
 	default:
 		return errors.New(fmt.Sprintf("status code is %d, body is: %s", res.StatusCode, string(body)))
 	}
-	return nil
 }
 
 func (c *localProxyConn) connect(dstHost, dstPort string) (uuid string, err error) {
@@ -129,16 +128,7 @@ func (c *localProxyConn) fill() error {
 	if err != nil {
 		return err
 	}
-	data := string(data_bytes)
-
-	decodeLen := base64.StdEncoding.DecodedLen(len(data))
-	bData := make([]byte, len(c.read_buffer)+decodeLen)
-	n, err := base64.StdEncoding.Decode(bData[len(c.read_buffer):], data_bytes)
-	if err != nil {
-		return err
-	}
-	bData = bData[:len(c.read_buffer)+n]
-	c.read_buffer = bData
+	c.read_buffer = append(c.read_buffer, data_bytes...)
 	return nil
 }
 
