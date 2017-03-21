@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net"
 
-	"encoding/base64"
 	"io/ioutil"
 
 	"errors"
@@ -156,14 +155,7 @@ func (hp *httpProxy) push(w http.ResponseWriter, r *http.Request) {
 				WriteHTTPError(w, fmt.Sprintf("read err:%v", err))
 				return
 			}
-			decodeLen := base64.StdEncoding.DecodedLen(len(body))
-			buf := make([]byte, decodeLen)
-			n, err := base64.StdEncoding.Decode(buf, []byte(body))
-			if err != nil {
-				WriteHTTPError(w, fmt.Sprintf("b64 decode err:%v", err))
-				return
-			}
-			d = dataBodyTyp{typ: DATA_TYP, body: buf[:n]}
+			d = dataBodyTyp{typ: DATA_TYP, body: body}
 		}
 
 		select {
