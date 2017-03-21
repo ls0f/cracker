@@ -13,7 +13,7 @@ func main() {
 	bufSize := flag.Int("buf", 1, "buf size, Unit is MB")
 	flag.Parse()
 	p := proxy.NewHttpProxy(*addr, *secret)
-	p.SetBufSize(*bufSize * 1024)
+	p.SetBufSize(*bufSize * 1024 * 1024)
 	p.Listen()
 
 }

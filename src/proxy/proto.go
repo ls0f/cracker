@@ -25,7 +25,6 @@ func WriteHTTPOK(w http.ResponseWriter, data string) {
 
 func WriteHTTPData(w http.ResponseWriter, data []byte) {
 	w.WriteHeader(HeadData)
-	w.Header().Set("Content-Type", "image/jpeg")
 	w.Write(data)
 }
 

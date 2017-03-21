@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"log"
 	"net"
 	"time"
 )
@@ -57,6 +58,7 @@ func (pc *proxyConn) work() {
 				if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
 					pc.sendMsg(dataBodyTyp{typ: HEART_TYP})
 				} else {
+					log.Print(err)
 					close(pc.close)
 					pc.sendMsg(dataBodyTyp{typ: QUIT_TYP})
 					return

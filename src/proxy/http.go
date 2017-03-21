@@ -15,6 +15,7 @@ import (
 
 	"sync"
 
+
 	"github.com/pborman/uuid"
 	"gopkg.in/bufio.v1"
 )
@@ -122,8 +123,8 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 				WriteHTTPHeart(w, "alive")
 
 			}
-		case <-pc.close:
-			WriteHTTPError(w, "server close conn")
+		case <-time.After(time.Duration(time.Second * heartTTL)):
+			WriteHTTPError(w, "server timeout")
 		}
 
 	} else {
@@ -196,8 +197,9 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 		pc.work()
 		remote.Close()
 		log.Printf("close connection with %s ... \n", remote.RemoteAddr().String())
-		log.Printf("delete uuid:%s ... \n", proxyID)
+		<-time.After(time.Duration(time.Second * heartTTL))
 		hp.Lock()
+		log.Printf("delete uuid:%s ... \n", proxyID)
 		delete(hp.proxyMap, proxyID)
 		hp.Unlock()
 	}()
