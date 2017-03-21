@@ -6,8 +6,7 @@ import (
 )
 
 const (
-	sendTimeOut = 3
-	bufSize = 10240
+	sendTimeOut = 15
 )
 
 type dataBodyTyp struct {
@@ -21,13 +20,20 @@ type proxyConn struct {
 	readChannel  chan dataBodyTyp
 	writeChannel chan dataBodyTyp
 	close        chan bool
+	// buf size
+	bs int
 }
 
 func newProxyConn(remote net.Conn, uuid string) *proxyConn {
 	return &proxyConn{remote: remote, uuid: uuid, readChannel: make(chan dataBodyTyp, 10),
 		writeChannel: make(chan dataBodyTyp, 10),
 		close:        make(chan bool),
+		bs:           bufSize,
 	}
+}
+
+func (pc *proxyConn) SetBufSize(bs int) {
+	pc.bs = bs
 }
 
 func (pc *proxyConn) sendMsg(body dataBodyTyp) {
@@ -41,7 +47,7 @@ func (pc *proxyConn) work() {
 
 	go func() {
 		for {
-			buf := make([]byte, bufSize)
+			buf := make([]byte, pc.bs)
 			pc.remote.SetReadDeadline(time.Now().Add(timeout * time.Second))
 			n, err := pc.remote.Read(buf)
 			if n > 0 {

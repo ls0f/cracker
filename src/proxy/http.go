@@ -36,6 +36,7 @@ const (
 	timeout  = 10
 	signTTL  = 10
 	heartTTL = 30
+	bufSize  = 10240
 )
 
 type httpProxy struct {
@@ -43,10 +44,16 @@ type httpProxy struct {
 	secret   string
 	proxyMap map[string]*proxyConn
 	sync.Mutex
+	// buf size
+	bs int
 }
 
 func NewHttpProxy(addr, secret string) *httpProxy {
-	return &httpProxy{addr: addr, secret: secret, proxyMap: make(map[string]*proxyConn)}
+	return &httpProxy{addr: addr,
+		secret:   secret,
+		proxyMap: make(map[string]*proxyConn),
+		bs:       bufSize,
+	}
 }
 
 func (hp *httpProxy) Listen() {
@@ -60,6 +67,10 @@ func (hp *httpProxy) Listen() {
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+}
+
+func (hp *httpProxy) SetBufSize(bs int) {
+	hp.bs = bs
 }
 
 func (hp *httpProxy) verify(r *http.Request) error {
@@ -184,6 +195,7 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Connect to %s: success ...\n", addr)
 	proxyID := uuid.New()
 	pc := newProxyConn(remote, proxyID)
+	pc.SetBufSize(hp.bs)
 	hp.Lock()
 	hp.proxyMap[proxyID] = pc
 	hp.Unlock()
