@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"io"
+
 	"gopkg.in/bufio.v1"
 )
 
@@ -30,6 +32,7 @@ type localProxyConn struct {
 	secret      string
 	read_buffer []byte
 	read_mutex  sync.Mutex
+	Source      io.ReadCloser
 	Close       chan bool
 }
 
@@ -81,34 +84,18 @@ func (c *localProxyConn) connect(dstHost, dstPort string) (uuid string, err erro
 
 }
 
-func (c *localProxyConn) pull() ([]byte, error) {
+func (c *localProxyConn) pull() error {
 
 	hc := &http.Client{Transport: tr, Timeout: time.Duration(time.Second * heartTTL)}
-	for {
 
-		req, _ := http.NewRequest("GET", c.server+PULL, nil)
-		c.gen_sign(req)
-		res, err := hc.Do(req)
-		if err != nil {
-			return nil, err
-		}
-		body, _ := ioutil.ReadAll(res.Body)
-		res.Body.Close()
-
-		switch res.StatusCode {
-
-		case HeadData:
-			return body, nil
-		case HeadHeart:
-			continue
-		case HeadQuit:
-			return nil, errors.New("should quit")
-		default:
-			return nil, errors.New(fmt.Sprintf("status code is %d, body is: %s", res.StatusCode, string(body)))
-
-		}
+	req, _ := http.NewRequest("GET", c.server+PULL, nil)
+	c.gen_sign(req)
+	res, err := hc.Do(req)
+	if err != nil {
+		return err
 	}
-
+	c.Source = res.Body
+	return nil
 }
 
 func (c *localProxyConn) Write(b []byte) (int, error) {
@@ -120,39 +107,6 @@ func (c *localProxyConn) Write(b []byte) (int, error) {
 	}
 
 	return len(b), nil
-}
-
-func (c *localProxyConn) fill() error {
-
-	data_bytes, err := c.pull()
-	if err != nil {
-		return err
-	}
-	c.read_buffer = append(c.read_buffer, data_bytes...)
-	return nil
-}
-
-func (c *localProxyConn) Read(b []byte) (n int, err error) {
-	c.read_mutex.Lock()
-	// If local buffer is empty, get new data
-	if len(c.read_buffer) == 0 {
-		err := c.fill()
-		if err != nil {
-			log.Printf("fill err:%v \n", err)
-			c.read_mutex.Unlock()
-			return 0, err
-		}
-	}
-	// Return local buffer
-	count := len(b)
-	if count > len(c.read_buffer) {
-		count = len(c.read_buffer)
-	}
-	copy(b, c.read_buffer[:count])
-	c.read_buffer = c.read_buffer[count:]
-
-	c.read_mutex.Unlock()
-	return count, nil
 }
 
 func (c *localProxyConn) alive() {
@@ -185,6 +139,10 @@ func Connect(server, remote, secret string) (*localProxyConn, error) {
 		return nil, err
 	}
 	conn.uuid = uuid
+	err = conn.pull()
+	if err != nil {
+		return nil, err
+	}
 	conn.Close = make(chan bool)
 	go conn.alive()
 	return &conn, nil

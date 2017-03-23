@@ -15,6 +15,7 @@ import (
 
 	"sync"
 
+	"io"
 
 	"github.com/pborman/uuid"
 	"gopkg.in/bufio.v1"
@@ -44,15 +45,12 @@ type httpProxy struct {
 	secret   string
 	proxyMap map[string]*proxyConn
 	sync.Mutex
-	// buf size
-	bs int
 }
 
 func NewHttpProxy(addr, secret string) *httpProxy {
 	return &httpProxy{addr: addr,
 		secret:   secret,
 		proxyMap: make(map[string]*proxyConn),
-		bs:       bufSize,
 	}
 }
 
@@ -67,10 +65,6 @@ func (hp *httpProxy) Listen() {
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-}
-
-func (hp *httpProxy) SetBufSize(bs int) {
-	hp.bs = bs
 }
 
 func (hp *httpProxy) verify(r *http.Request) error {
@@ -107,26 +101,25 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 	if err := hp.before(w, r); err != nil {
 		return
 	}
+	flusher, _ := w.(http.Flusher)
 	uuid := r.Header.Get("UUID")
 	hp.Lock()
 	pc, ok := hp.proxyMap[uuid]
 	hp.Unlock()
 	if ok {
-		select {
-		case d := <-pc.readChannel:
-			switch d.typ {
-			case DATA_TYP:
-				WriteHTTPData(w, d.body)
-			case QUIT_TYP:
-				WriteHTTPQuit(w, "quit")
-			case HEART_TYP:
-				WriteHTTPHeart(w, "alive")
-
+		w.Header().Set("Content-Type","application/octet-stream")
+		w.Header().Set("Transfer-Encoding", "chunked")
+		n, err := io.Copy(w, pc.remote)
+		log.Println(n, err)
+		close(pc.close)
+		go func(){
+			select {
+			case <-pc.close:
+				return
+			case <-time.After(100*time.Millisecond):
+				flusher.Flush()
 			}
-		case <-time.After(time.Duration(time.Second * heartTTL)):
-			WriteHTTPError(w, "server timeout")
-		}
-
+		}()
 	} else {
 		WriteHTTPError(w, "uuid don't exist")
 	}
@@ -188,7 +181,6 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Connect to %s: success ...\n", addr)
 	proxyID := uuid.New()
 	pc := newProxyConn(remote, proxyID)
-	pc.SetBufSize(hp.bs)
 	hp.Lock()
 	hp.proxyMap[proxyID] = pc
 	hp.Unlock()

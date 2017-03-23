@@ -52,7 +52,11 @@ func handleConn(conn net.Conn, raddr, secret string) {
 	}
 	conn.Write([]byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}) //响应客户端连接成功
 	//进行转发
-	go io.Copy(conn, lp)
+	go func() {
+		n, err := io.Copy(conn, lp.Source)
+		log.Println(n, err)
+		lp.Source.Close()
+	}()
 	io.Copy(lp, conn)
 	close(lp.Close)
 	lp.Quit()
