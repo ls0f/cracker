@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -86,7 +85,7 @@ func (c *localProxyConn) connect(dstHost, dstPort string) (uuid string, err erro
 
 func (c *localProxyConn) pull() error {
 
-	hc := &http.Client{Transport: tr, Timeout: time.Duration(time.Second * heartTTL)}
+	hc := &http.Client{Transport: tr}
 
 	req, _ := http.NewRequest("GET", c.server+PULL, nil)
 	c.gen_sign(req)
@@ -102,7 +101,7 @@ func (c *localProxyConn) Write(b []byte) (int, error) {
 
 	err := c.push(b, DATA_TYP)
 	if err != nil {
-		log.Printf("push err %v ... \n", err)
+		g.Debugf("push err %v ... \n", err)
 		return 0, err
 	}
 

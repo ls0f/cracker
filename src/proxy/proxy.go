@@ -44,6 +44,7 @@ func (pc *proxyConn) work() {
 				continue
 			case DATA_TYP:
 				if _, err := pc.remote.Write(d.body); err != nil {
+					g.Debugf("write err: %s", err)
 					return
 				}
 			}

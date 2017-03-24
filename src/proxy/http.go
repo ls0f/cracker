@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -17,9 +16,13 @@ import (
 
 	"io"
 
+	"logger"
+
 	"github.com/pborman/uuid"
 	"gopkg.in/bufio.v1"
 )
+
+var g = logger.GetLogger()
 
 const (
 	CONNECT = "/connect"
@@ -37,7 +40,6 @@ const (
 	timeout  = 10
 	signTTL  = 10
 	heartTTL = 30
-	bufSize  = 4096
 )
 
 type httpProxy struct {
@@ -60,10 +62,10 @@ func (hp *httpProxy) Listen() {
 	http.HandleFunc(PUSH, hp.push)
 	http.HandleFunc(PING, hp.ping)
 	http.HandleFunc("/debug", hp.debug)
-	log.Printf("listen at:[%s]\n", hp.addr)
+	g.Infof("listen at:[%s]", hp.addr)
 	err := http.ListenAndServe(hp.addr, nil)
 	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
+		g.Fatal("ListenAndServe: ", err)
 	}
 }
 
@@ -117,6 +119,7 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 				if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
 					continue
 				} else {
+					g.Debugf("read err:%s", err)
 					close(pc.close)
 					return
 				}
@@ -175,13 +178,13 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 	host := r.Header.Get("DSTHOST")
 	port := r.Header.Get("DSTPORT")
 	addr := fmt.Sprintf("%s:%s", host, port)
-	log.Printf("Connecting to %s:...\n", addr)
+	g.Debugf("Connecting to %s:...", addr)
 	remote, err := net.DialTimeout("tcp", addr, time.Duration(time.Second*timeout))
 	if err != nil {
 		WriteHTTPError(w, fmt.Sprintf("Could not connect to %s", addr))
 		return
 	}
-	log.Printf("Connect to %s: success ...\n", addr)
+	g.Debugf("Connect to %s: success ...", addr)
 	proxyID := uuid.New()
 	pc := newProxyConn(remote, proxyID)
 	hp.Lock()
@@ -191,10 +194,10 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		pc.work()
 		remote.Close()
-		log.Printf("close connection with %s ... \n", remote.RemoteAddr().String())
+		g.Debugf("close connection with %s ... ", remote.RemoteAddr().String())
 		<-time.After(time.Duration(time.Second * heartTTL))
 		hp.Lock()
-		log.Printf("delete uuid:%s ... \n", proxyID)
+		g.Debugf("delete uuid:%s ... \n", proxyID)
 		delete(hp.proxyMap, proxyID)
 		hp.Unlock()
 	}()

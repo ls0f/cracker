@@ -1,8 +1,15 @@
 
 export GOPATH=$(PWD)
 
-MODULES := proxy
+MODULES := proxy logger
 BIN := server local
+
+GITTAG := `git describe --tags`
+VERSION := `git describe --abbrev=0 --tags`
+RELEASE := `git rev-list $(shell git describe --abbrev=0 --tags).. --count`
+BUILD_TIME := `date +%FT%T%z`
+# Setup the -ldflags option for go build here, interpolate the variable values
+LDFLAGS := -ldflags "-X main.GitTag=${GITTAG} -X main.BuildTime=${BUILD_TIME}"
 
 vendor:
 	for m in $(MODULES) ; do \
@@ -30,7 +37,7 @@ build:
 	mkdir -p bin;\
 	echo ==================================; \
 	for m in $(BIN); do \
-		cd $(PWD)/$$m && go build -o ../bin/$$m --race ; \
+		cd $(PWD)/$$m && go build ${LDFLAGS} -o ../bin/$$m --race ; \
 	done
 	echo ==================================; \
 
