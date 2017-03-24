@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	PerHostNum = 30
+	PerHostNum = 10
 )
 
 var tr = &http.Transport{

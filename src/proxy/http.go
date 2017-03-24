@@ -107,19 +107,22 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 	pc, ok := hp.proxyMap[uuid]
 	hp.Unlock()
 	if ok {
-		w.Header().Set("Content-Type","application/octet-stream")
+		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Transfer-Encoding", "chunked")
-		n, err := io.Copy(w, pc.remote)
-		log.Println(n, err)
-		close(pc.close)
-		go func(){
-			select {
-			case <-pc.close:
-				return
-			case <-time.After(100*time.Millisecond):
-				flusher.Flush()
+		for {
+			pc.remote.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
+			_, err := io.Copy(w, pc.remote)
+			flusher.Flush()
+			if err != nil {
+				if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
+					continue
+				} else {
+					close(pc.close)
+					return
+				}
+
 			}
-		}()
+		}
 	} else {
 		WriteHTTPError(w, "uuid don't exist")
 	}
