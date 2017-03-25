@@ -45,12 +45,15 @@ type httpProxy struct {
 	secret   string
 	proxyMap map[string]*proxyConn
 	sync.Mutex
+	https bool
 }
 
-func NewHttpProxy(addr, secret string) *httpProxy {
+func NewHttpProxy(addr, secret string, https bool) *httpProxy {
 	return &httpProxy{addr: addr,
 		secret:   secret,
 		proxyMap: make(map[string]*proxyConn),
+		https:    https,
+
 	}
 }
 
@@ -61,7 +64,12 @@ func (hp *httpProxy) Listen() {
 	http.HandleFunc(PING, hp.ping)
 	http.HandleFunc("/debug", hp.debug)
 	g.Infof("listen at:[%s]", hp.addr)
-	err := http.ListenAndServe(hp.addr, nil)
+	var err error
+	if hp.https {
+		err = http.ListenAndServeTLS(hp.addr, "cert.pem", "key.pem", nil)
+	} else {
+		err = http.ListenAndServe(hp.addr, nil)
+	}
 	if err != nil {
 		g.Fatal("ListenAndServe: ", err)
 	}

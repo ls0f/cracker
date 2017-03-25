@@ -1,0 +1,21 @@
+language: go
+
+#branches:
+#  only:
+#    - master
+
+go:
+    - 1.7
+env:
+     - "PATH=/home/travis/gopath/bin:$PATH"
+
+before_install:
+    - go get github.com/mitchellh/gox
+    - go get github.com/tcnksm/ghr
+
+script:
+    - make vendor
+    - make test
+
+after_success:
+    - sh ./deploy.sh

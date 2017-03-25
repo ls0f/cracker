@@ -6,6 +6,8 @@ import (
 	"logger"
 	"os"
 	"socks"
+	"proxy"
+
 )
 
 var (
@@ -15,7 +17,7 @@ var (
 
 func main() {
 	laddr := flag.String("laddr", "", "listen addr")
-	raddr := flag.String("raddr", "", "remote http url")
+	raddr := flag.String("raddr", "", "remote http url(e.g, https://example.com)")
 	secret := flag.String("secret", "", "secret key")
 	debug := flag.Bool("debug", false, "debug mode")
 	version := flag.Bool("v", false, "version")
@@ -27,5 +29,6 @@ func main() {
 		os.Exit(0)
 	}
 	logger.InitLogger(*debug)
+	proxy.Init()
 	socks.NewSocks5(*laddr, *raddr, *secret)
 }
