@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
-	"logger"
-	"proxy"
-	"os"
 	"fmt"
+	"logger"
+	"os"
+	"proxy"
 )
 
 var (

@@ -2,10 +2,10 @@ package socks
 
 import (
 	"io"
-	"proxy"
-	"net"
-	"strconv"
 	"logger"
+	"net"
+	"proxy"
+	"strconv"
 )
 
 var g = logger.GetLogger()
@@ -67,7 +67,7 @@ func handleConn(conn net.Conn, raddr, secret string) {
 
 }
 
-func NewSocks5(addr , raddr, secret string) {
+func NewSocks5(addr, raddr, secret string) {
 	g.Infof("listen at:[%s]", addr)
 	l, err := net.Listen("tcp", addr)
 	if err != nil {

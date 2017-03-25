@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"logger"
 	"os"
-	"fmt"
 	"socks"
 )
 
@@ -12,8 +12,6 @@ var (
 	GitTag    = "2000.01.01.release"
 	BuildTime = "2000-01-01T00:00:00+0800"
 )
-
-
 
 func main() {
 	laddr := flag.String("laddr", "", "listen addr")

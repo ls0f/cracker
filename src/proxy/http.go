@@ -14,8 +14,6 @@ import (
 
 	"sync"
 
-	"io"
-
 	"logger"
 
 	"github.com/pborman/uuid"
@@ -111,18 +109,17 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Transfer-Encoding", "chunked")
+		buf := make([]byte, 10240)
 		for {
-			pc.remote.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-			_, err := io.Copy(w, pc.remote)
 			flusher.Flush()
+			n, err := pc.remote.Read(buf)
+			if n > 0 {
+				w.Write(buf[:n])
+			}
 			if err != nil {
-				if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
-					continue
-				} else {
-					g.Debugf("read err:%s", err)
-					close(pc.close)
-					return
-				}
+				g.Debugf("read err:%s", err)
+				close(pc.close)
+				return
 
 			}
 		}
