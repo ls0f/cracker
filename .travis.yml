@@ -14,8 +14,8 @@ before_install:
     - go get github.com/tcnksm/ghr
 
 script:
-	- make vendor
-	- make test
+    - make vendor
+    - make test
 
 after_success:
     - sh ./deploy.sh
