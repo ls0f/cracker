@@ -6,6 +6,7 @@ import (
 	"logger"
 	"os"
 	"socks"
+	"proxy"
 )
 
 var (
@@ -27,5 +28,6 @@ func main() {
 		os.Exit(0)
 	}
 	logger.InitLogger(*debug)
+	proxy.Init()
 	socks.NewSocks5(*laddr, *raddr, *secret)
 }

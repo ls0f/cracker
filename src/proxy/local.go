@@ -29,18 +29,18 @@ var tr = &http.Transport{
 	MaxIdleConnsPerHost: PerHostNum,
 }
 
-func init() {
+func Init() {
 	if f, err := os.Stat("cert.pem"); err == nil && !f.IsDir() {
 		CAPOOL := x509.NewCertPool()
 		serverCert, err := ioutil.ReadFile("cert.pem")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "read cert.pem err:%s \n", err)
+			g.Errorf("read cert.pem err:%s ", err)
 			return
 		}
 		CAPOOL.AppendCertsFromPEM(serverCert)
 		config := &tls.Config{RootCAs: CAPOOL}
 		tr.TLSClientConfig = config
-		fmt.Fprintf(os.Stderr, "load cert.pem success ... \n")
+		g.Info("load cert.pem success ... ")
 	}
 }
 
