@@ -10,11 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
-
 	"io"
-
 	"os"
-
 	"gopkg.in/bufio.v1"
 )
 

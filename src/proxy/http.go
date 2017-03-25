@@ -53,6 +53,7 @@ func NewHttpProxy(addr, secret string, https bool) *httpProxy {
 		secret:   secret,
 		proxyMap: make(map[string]*proxyConn),
 		https:    https,
+
 	}
 }
 
@@ -67,7 +68,6 @@ func (hp *httpProxy) Listen() {
 	if hp.https {
 		err = http.ListenAndServeTLS(hp.addr, "cert.pem", "key.pem", nil)
 	} else {
-
 		err = http.ListenAndServe(hp.addr, nil)
 	}
 	if err != nil {
