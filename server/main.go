@@ -21,14 +21,31 @@ func main() {
 	secret := flag.String("secret", "", "secret")
 	debug := flag.Bool("debug", false, "debug mode")
 	version := flag.Bool("v", false, "version")
+	https := flag.Bool("https", false, "https")
 	flag.Parse()
+	logger.InitLogger(*debug)
 	if *version {
 		fmt.Printf("GitTag: %s \n", GitTag)
 		fmt.Printf("BuildTime: %s \n", BuildTime)
 		os.Exit(0)
 	}
-	logger.InitLogger(*debug)
-	p := proxy.NewHttpProxy(*addr, *secret)
+	if *https {
+		f, err := os.Stat("cert.pem")
+		if err != nil {
+			g.Fatal(err)
+		}
+		if f.IsDir() {
+			g.Fatal("cert.pem should be file")
+		}
+		f, err = os.Stat("key.pem")
+		if err != nil {
+			g.Fatal(err)
+		}
+		if f.IsDir() {
+			g.Fatal("key.pem should be file")
+		}
+	}
+	p := proxy.NewHttpProxy(*addr, *secret, *https)
 	p.Listen()
 
 }

@@ -40,4 +40,5 @@ build:
 		cd $(PWD)/$$m && go build ${LDFLAGS} -o ../bin/$$m --race ; \
 	done
 	echo ==================================; \
+	cd $(PWD) && cp gen_key_cert.sh ./bin
 

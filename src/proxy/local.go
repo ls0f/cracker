@@ -1,6 +1,8 @@
 package proxy
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -10,6 +12,8 @@ import (
 	"time"
 
 	"io"
+
+	"os"
 
 	"gopkg.in/bufio.v1"
 )
@@ -23,6 +27,21 @@ var tr = &http.Transport{
 	DisableKeepAlives: false,
 
 	MaxIdleConnsPerHost: PerHostNum,
+}
+
+func init() {
+	if f, err := os.Stat("cert.pem"); err == nil && !f.IsDir() {
+		CAPOOL := x509.NewCertPool()
+		serverCert, err := ioutil.ReadFile("cert.pem")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "read cert.pem err:%s \n", err)
+			return
+		}
+		CAPOOL.AppendCertsFromPEM(serverCert)
+		config := &tls.Config{RootCAs: CAPOOL}
+		tr.TLSClientConfig = config
+		fmt.Fprintf(os.Stderr, "load cert.pem success ... \n")
+	}
 }
 
 type localProxyConn struct {
@@ -132,7 +151,6 @@ func Connect(server, remote, secret string) (*localProxyConn, error) {
 	conn := localProxyConn{server: server, secret: secret}
 	host := strings.Split(remote, ":")[0]
 	port := strings.Split(remote, ":")[1]
-
 	uuid, err := conn.connect(host, port)
 	if err != nil {
 		return nil, err
