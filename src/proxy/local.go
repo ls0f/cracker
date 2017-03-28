@@ -5,13 +5,14 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
-	"io"
-	"os"
+
 	"gopkg.in/bufio.v1"
 )
 
@@ -47,8 +48,8 @@ type localProxyConn struct {
 	secret      string
 	read_buffer []byte
 	read_mutex  sync.Mutex
-	Source      io.ReadCloser
-	Close       chan bool
+	source      io.ReadCloser
+	close       chan bool
 }
 
 func (c *localProxyConn) gen_sign(req *http.Request) {
@@ -109,8 +110,15 @@ func (c *localProxyConn) pull() error {
 	if err != nil {
 		return err
 	}
-	c.Source = res.Body
+	c.source = res.Body
 	return nil
+}
+
+func (c *localProxyConn) Read(b []byte) (int, error) {
+	if c.source == nil {
+		return 0, errors.New("pull http connection is not ready")
+	}
+	return c.source.Read(b)
 }
 
 func (c *localProxyConn) Write(b []byte) (int, error) {
@@ -124,10 +132,14 @@ func (c *localProxyConn) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
+func (c *localProxyConn) CloseRead() error {
+	return c.source.Close()
+}
+
 func (c *localProxyConn) alive() {
 	for {
 		select {
-		case <-c.Close:
+		case <-c.close:
 			return
 		case <-time.After(time.Duration(time.Second * timeout)):
 			if err := c.push([]byte("alive"), HEART_TYP); err != nil {
@@ -137,8 +149,13 @@ func (c *localProxyConn) alive() {
 	}
 }
 
-func (c *localProxyConn) Quit() {
+func (c *localProxyConn) quit() {
 	c.push([]byte("quit"), QUIT_TYP)
+}
+
+func (c *localProxyConn) Close() {
+	close(c.close)
+	c.quit()
 }
 
 func Connect(server, remote, secret string) (*localProxyConn, error) {
@@ -157,7 +174,7 @@ func Connect(server, remote, secret string) (*localProxyConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	conn.Close = make(chan bool)
+	conn.close = make(chan bool)
 	go conn.alive()
 	return &conn, nil
 }

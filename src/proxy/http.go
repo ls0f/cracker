@@ -53,7 +53,6 @@ func NewHttpProxy(addr, secret string, https bool) *httpProxy {
 		secret:   secret,
 		proxyMap: make(map[string]*proxyConn),
 		https:    https,
-
 	}
 }
 
