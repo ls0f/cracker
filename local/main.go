@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"logger"
 	"os"
-	"socks"
 	"proxy"
-
+	"socks"
 )
 
 var (
 	GitTag    = "2000.01.01.release"
 	BuildTime = "2000-01-01T00:00:00+0800"
 )
+
+var g = logger.GetLogger()
 
 func main() {
 	laddr := flag.String("laddr", "", "listen addr")
@@ -30,5 +31,9 @@ func main() {
 	}
 	logger.InitLogger(*debug)
 	proxy.Init()
-	socks.NewSocks5(*laddr, *raddr, *secret)
+	s, err := socks.NewSocks5(*laddr, *raddr, *secret)
+	if err != nil {
+		g.Fatal(err)
+	}
+	s.Wait()
 }

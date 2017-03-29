@@ -10,7 +10,13 @@ import (
 
 var g = logger.GetLogger()
 
-func handleConn(conn net.Conn, raddr, secret string) {
+type socks5 struct {
+	raddr  string
+	secret string
+	wait   chan bool
+}
+
+func (s *socks5) handleConn(conn net.Conn) {
 
 	defer conn.Close()
 	buf := make([]byte, 1024)
@@ -46,7 +52,7 @@ func handleConn(conn net.Conn, raddr, secret string) {
 	}
 
 	g.Debugf("will connect %s ... ", addr)
-	lp, err := proxy.Connect(raddr, addr, secret)
+	lp, err := proxy.Connect(s.raddr, addr, s.secret)
 	if err != nil {
 		g.Errorf("proxy connect err:%s", err)
 		return
@@ -54,31 +60,42 @@ func handleConn(conn net.Conn, raddr, secret string) {
 	conn.Write([]byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}) //响应客户端连接成功
 	//进行转发
 	go func() {
-		_, err := io.Copy(conn, lp.Source)
+		_, err := io.Copy(conn, lp)
 		if err != nil {
 			g.Debugf("read err:", err)
 		}
-		lp.Source.Close()
+		lp.CloseRead()
 	}()
 	io.Copy(lp, conn)
-	close(lp.Close)
-	lp.Quit()
+	lp.Close()
 	g.Debugf("close connection with %s", conn.RemoteAddr().String())
 
 }
 
-func NewSocks5(addr, raddr, secret string) {
-	g.Infof("listen at:[%s]", addr)
+func (s *socks5) Wait() {
+	<-s.wait
+}
+
+func NewSocks5(addr, raddr, secret string) (s *socks5, err error) {
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
-		g.Panic(err)
+		return nil, err
 	}
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			g.Errorf("accept err:%s", err)
-		}
-		go handleConn(conn, raddr, secret)
+	g.Infof("socks5 proxy listen at:[%s]", addr)
+	s = &socks5{
+		raddr:  raddr,
+		secret: secret,
+		wait:   make(chan bool),
+	}
+	go func() {
+		for {
+			conn, err := l.Accept()
+			if err != nil {
+				g.Errorf("accept err:%s", err)
+			}
+			go s.handleConn(conn)
 
-	}
+		}
+	}()
+	return s, nil
 }
