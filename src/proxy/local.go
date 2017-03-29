@@ -22,9 +22,9 @@ const (
 
 var tr = &http.Transport{
 
-	DisableKeepAlives: false,
-
+	DisableKeepAlives:   false,
 	MaxIdleConnsPerHost: PerHostNum,
+	Proxy:               http.ProxyFromEnvironment,
 }
 
 func Init() {
@@ -66,6 +66,7 @@ func (c *localProxyConn) push(data []byte, typ string) error {
 	req, _ := http.NewRequest("POST", c.server+PUSH, buf)
 	c.gen_sign(req)
 	req.Header.Set("TYP", typ)
+	req.ContentLength = int64(len(data))
 	req.Header.Set("Content-Type", "image/jpeg")
 	res, err := hc.Do(req)
 	if err != nil {
