@@ -1,9 +1,9 @@
 # cracker
-socks5 proxy over http
+proxy over http[s], support http,socks5 proxy.
 
 ```
 +------------+            +--------------+          
-| local app  |  <=======> |socks5 client | <#######
+| local app  |  <=======> |local proxy   | <#######
 +------------+            +--------------+        #
                                                   #
                                                   #
@@ -11,7 +11,7 @@ socks5 proxy over http
                                                   #
                                                   #
 +-------------+            +--------------+       #
-| target host |  <=======> | proxy server |  <#####
+| target host |  <=======> |http[s] server|  <#####
 +-------------+            +--------------+         
 ```
 
@@ -39,7 +39,7 @@ list
 ## Local side (Run on your local pc)
 
 ```
-./local -laddr 127.0.0.1:1080 -raddr http://example.com:8080 -secret <password>
+./local -raddr http://example.com:8080 -secret <password>
 ```
 
 ## https
@@ -59,7 +59,7 @@ copy the certificate and private key into the same folder with server bin
 ```
 
 ```
-./local -laddr 127.0.0.1:1080 -raddr https://example.com:8080 -secret <password>
+./local -raddr https://example.com:8080 -secret <password>
 ```
 
 Of Course, you can create a self-signed ssl certificate by openssl.
@@ -75,7 +75,7 @@ copy the certificate into the same folder with local bin and bind the ip and hos
 
 ```
 echo "<your server ip> <hostname>" >> /etc/hosts
-./local -laddr 127.0.0.1:1080 -raddr https://<hostname>:8080 -secret <password>
+./local -raddr https://<hostname>:8080 -secret <password>
 ```
 
 ## Next
