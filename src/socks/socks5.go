@@ -62,7 +62,7 @@ func (s *socks5) handleConn(conn net.Conn) {
 	go func() {
 		_, err := io.Copy(conn, lp)
 		if err != nil {
-			g.Debugf("read err:", err)
+			g.Debugf("read err: %s", err)
 		}
 		lp.CloseRead()
 	}()
