@@ -65,17 +65,16 @@ copy the certificate and private key into the same folder with server bin
 Of Course, you can create a self-signed ssl certificate by openssl.
 
 ```
-openssl req -subj '/CN=*/' -x509 -sha256 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 1024 -nodes
+curl https://raw.githubusercontent.com/lovedboy/cracker/master/gen_key_cert.sh | sh
 ```
 
 ```
 ./server -addr :8080 -secret <password> -https
 ```
-copy the certificate into the same folder with local bin and bind the ip and hostname(not domain !!!)
+copy the certificate into the same folder with local bin.
 
 ```
-echo "<your server ip> <hostname>" >> /etc/hosts
-./local -raddr https://<hostname>:8080 -secret <password>
+./local -raddr https://<ip>:8080 -secret <password>
 ```
 
 ## Next
