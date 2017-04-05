@@ -14,7 +14,7 @@ import (
 
 	"sync"
 
-	"logger"
+	"cracker/logger"
 
 	"github.com/pborman/uuid"
 	"gopkg.in/bufio.v1"

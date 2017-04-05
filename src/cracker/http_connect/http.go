@@ -2,11 +2,11 @@ package http_connect
 
 import (
 	"bytes"
+	"cracker/logger"
+	"cracker/proxy"
 	"fmt"
 	"io"
-	"logger"
 	"net"
-	"proxy"
 )
 
 var g = logger.GetLogger()
@@ -36,7 +36,7 @@ func (h *httpConnect) handleConn(conn net.Conn) {
 	}
 	if method == "CONNECT" {
 		conn.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n")) //响应客户端连接成功
-	}else{
+	} else {
 		conn.Write(buf[:n])
 	}
 	//进行转发

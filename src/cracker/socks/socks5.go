@@ -1,10 +1,10 @@
 package socks
 
 import (
+	"cracker/logger"
+	"cracker/proxy"
 	"io"
-	"logger"
 	"net"
-	"proxy"
 	"strconv"
 )
 

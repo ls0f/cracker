@@ -1,11 +1,11 @@
 package main
 
 import (
+	"cracker/logger"
+	"cracker/proxy"
 	"flag"
 	"fmt"
-	"logger"
 	"os"
-	"proxy"
 )
 
 var (
