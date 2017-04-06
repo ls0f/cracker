@@ -1,5 +1,4 @@
 
-export GOPATH=$(PWD)
 
 MODULES := proxy logger
 BIN := server local
@@ -12,21 +11,15 @@ BUILD_TIME := `date +%FT%T%z`
 LDFLAGS := -ldflags "-X main.GitTag=${GITTAG} -X main.BuildTime=${BUILD_TIME}"
 
 vendor:
-	for m in $(MODULES) ; do \
-	cd src/$$m && go get -insecure -v && cd -;\
-	done
+	go get ./...
 	go get github.com/stretchr/testify
 
 
 test:
-	echo ==================================; \
-	for m in $(MODULES); do \
-		cd $(PWD)/src/$$m && go test --race -cover; \
-		echo ==================================; \
-	done
+	go test ./... --race -cover;
 
 fmt:
-	find . -name "*.go" -type f -exec echo {} \; | grep -v -E "github.com|gopkg.in"|\
+	find . -name "*.go" -type f -exec echo {} \;  |\
 	while IFS= read -r line; \
 	do \
 		echo "$$line";\

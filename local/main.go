@@ -1,14 +1,15 @@
 package main
 
 import (
-	"cracker/http_connect"
-	"cracker/logger"
-	"cracker/proxy"
-	"cracker/socks"
 	"flag"
 	"fmt"
 	"os"
 	"sync"
+
+	"github.com/lovedboy/cracker/cracker/http_connect"
+	"github.com/lovedboy/cracker/cracker/logger"
+	"github.com/lovedboy/cracker/cracker/proxy"
+	"github.com/lovedboy/cracker/cracker/socks"
 )
 
 var (
