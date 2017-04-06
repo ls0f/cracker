@@ -22,11 +22,10 @@ Download the latest binaries from this [release page](https://github.com/lovedbo
 You can also install from source if you have go installed.
 
 ```
-git clone https://github.com/lovedboy/cracker
-cd cracker
-make install
-cd bin
-list
+# on server
+go get github.com/lovedboy/cracker/server
+# on local
+go get github.com/lovedboy/cracker/local
 ```
 # Usage
 
