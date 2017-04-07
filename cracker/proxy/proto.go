@@ -6,14 +6,20 @@ import (
 )
 
 const (
-	HeadError = 500
-	HeadOK    = 200
-	HeadData  = 201
-	HeadHeart = 202
-	HeadQuit  = 203
+	HeadError    = 500
+	HeadOK       = 200
+	HeadData     = 201
+	HeadHeart    = 202
+	HeadQuit     = 203
+	HeadNotFound = 404
 )
 
 func WriteHTTPError(w http.ResponseWriter, message string) {
+	w.WriteHeader(HeadError)
+	fmt.Fprintf(w, "%s", message)
+}
+
+func WriteNotFoundError(w http.ResponseWriter, message string) {
 	w.WriteHeader(HeadError)
 	fmt.Fprintf(w, "%s", message)
 }

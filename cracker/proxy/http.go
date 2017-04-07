@@ -17,7 +17,6 @@ import (
 	"github.com/lovedboy/cracker/cracker/logger"
 
 	"github.com/pborman/uuid"
-	"gopkg.in/bufio.v1"
 )
 
 var g = logger.GetLogger()
@@ -61,7 +60,6 @@ func (hp *httpProxy) Listen() {
 	http.HandleFunc(PULL, hp.pull)
 	http.HandleFunc(PUSH, hp.push)
 	http.HandleFunc(PING, hp.ping)
-	http.HandleFunc("/debug", hp.debug)
 	g.Infof("listen at:[%s]", hp.addr)
 	var err error
 	if hp.https {
@@ -95,7 +93,8 @@ func (hp *httpProxy) verify(r *http.Request) error {
 func (hp *httpProxy) before(w http.ResponseWriter, r *http.Request) error {
 	err := hp.verify(r)
 	if err != nil {
-		WriteHTTPError(w, err.Error())
+		g.Debug(err)
+		WriteNotFoundError(w, "404")
 	}
 	return err
 }
@@ -206,16 +205,4 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 		hp.Unlock()
 	}()
 	WriteHTTPOK(w, proxyID)
-}
-
-func (hp *httpProxy) debug(w http.ResponseWriter, r *http.Request) {
-	hp.Lock()
-
-	buf := bufio.Buffer{}
-	for k, v := range hp.proxyMap {
-		buf.WriteString(fmt.Sprintf("%s  %s\n", k, v.remote.RemoteAddr().String()))
-	}
-	hp.Unlock()
-	WriteHTTPOK(w, buf.String())
-
 }
