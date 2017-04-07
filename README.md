@@ -76,8 +76,16 @@ copy the certificate into the same folder with local bin.
 ./local -raddr https://<ip>:8080 -secret <password>
 ```
 
-## Next
+
+# Quick Test
+
+If you don't want to run the server side, I did for you :) you just need run the local side.
+
+```
+./local  -raddr https://lit-citadel-13724.herokuapp.com -secret 123456
+```
+
+# Next
 
 Play with [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega/releases)
-
 
