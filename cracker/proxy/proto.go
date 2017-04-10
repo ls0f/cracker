@@ -20,7 +20,7 @@ func WriteHTTPError(w http.ResponseWriter, message string) {
 }
 
 func WriteNotFoundError(w http.ResponseWriter, message string) {
-	w.WriteHeader(HeadError)
+	w.WriteHeader(HeadNotFound)
 	fmt.Fprintf(w, "%s", message)
 }
 
