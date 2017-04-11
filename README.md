@@ -85,7 +85,7 @@ If you don't want to run the server side, I did for you :) you only need to run 
 ./local  -raddr https://lit-citadel-13724.herokuapp.com -secret 123456
 ```
 
-[Deploy the server size on heroku](https://github.com/lovedboy/cracker-heroku)
+[Deploy the server side on heroku](https://github.com/lovedboy/cracker-heroku)
 
 
 # Next
