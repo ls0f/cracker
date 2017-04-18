@@ -29,7 +29,12 @@ var tr = &http.Transport{
 
 func Init() {
 	if f, err := os.Stat("cert.pem"); err == nil && !f.IsDir() {
-		CAPOOL := x509.NewCertPool()
+		var CAPOOL *x509.CertPool
+		CAPOOL, err := x509.SystemCertPool()
+		if err != nil {
+			g.Warning(err)
+			CAPOOL = x509.NewCertPool()
+		}
 		serverCert, err := ioutil.ReadFile("cert.pem")
 		if err != nil {
 			g.Errorf("read cert.pem err:%s ", err)
