@@ -11,30 +11,17 @@ import (
 
 var g = logger.GetLogger()
 
-type socks5 struct {
-	raddr  string
-	secret string
-	wait   chan bool
+type Socks5 struct {
+	Raddr  string
+	Secret string
 }
 
-func (s *socks5) handleConn(conn net.Conn) {
+func (s *Socks5) HandleConn(msg []byte, conn net.Conn) {
 
-	defer conn.Close()
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
-	if err != nil {
-		g.Errorf("read err:%s", err)
-		return
-	}
-
-	if buf[0] != 0x05 {
-		//只处理Socks5协议
-		g.Warning("only support sock5...\n")
-		return
-	}
 	//客户端回应：Socks服务端不需要验证方式
 	conn.Write([]byte{0x05, 0x00})
-	n, _ = conn.Read(buf)
+	buf := make([]byte, 1024)
+	n, _ := conn.Read(buf)
 	var host, port string
 	switch buf[3] {
 	case 0x01: //IP V4
@@ -47,13 +34,9 @@ func (s *socks5) handleConn(conn net.Conn) {
 	port = strconv.Itoa(int(buf[n-2])<<8 | int(buf[n-1]))
 
 	addr := net.JoinHostPort(host, port)
-	if err != nil {
-		g.Errorf("host port join err:%s", err)
-		return
-	}
 
 	g.Debugf("will connect %s ... ", addr)
-	lp, err := proxy.Connect(s.raddr, addr, s.secret)
+	lp, err := proxy.Connect(s.Raddr, addr, s.Secret)
 	if err != nil {
 		g.Errorf("proxy connect err:%s", err)
 		return
@@ -69,34 +52,4 @@ func (s *socks5) handleConn(conn net.Conn) {
 	}()
 	io.Copy(lp, conn)
 	lp.Close()
-	g.Debugf("close connection with %s", conn.RemoteAddr().String())
-
-}
-
-func (s *socks5) Wait() {
-	<-s.wait
-}
-
-func NewSocks5(addr, raddr, secret string) (s *socks5, err error) {
-	l, err := net.Listen("tcp", addr)
-	if err != nil {
-		return nil, err
-	}
-	g.Infof("socks5 proxy listen at:[%s]", addr)
-	s = &socks5{
-		raddr:  raddr,
-		secret: secret,
-		wait:   make(chan bool),
-	}
-	go func() {
-		for {
-			conn, err := l.Accept()
-			if err != nil {
-				g.Errorf("accept err:%s", err)
-			}
-			go s.handleConn(conn)
-
-		}
-	}()
-	return s, nil
 }

@@ -4,12 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"sync"
 
-	"github.com/lovedboy/cracker/cracker/http_connect"
+	. "github.com/lovedboy/cracker/cracker/local_server"
 	"github.com/lovedboy/cracker/cracker/logger"
 	"github.com/lovedboy/cracker/cracker/proxy"
-	"github.com/lovedboy/cracker/cracker/socks"
 )
 
 var (
@@ -20,8 +18,7 @@ var (
 var g = logger.GetLogger()
 
 func main() {
-	socks5Addr := flag.String("socks5", "127.0.0.1:1080", "socks5 listen addr")
-	httpAddr := flag.String("http", "127.0.0.1:8080", "http listen addr")
+	addr := flag.String("addr", "127.0.0.1:1080", "listen addr")
 	raddr := flag.String("raddr", "", "remote http url(e.g, https://example.com)")
 	secret := flag.String("secret", "", "secret key")
 	debug := flag.Bool("debug", false, "debug mode")
@@ -35,28 +32,9 @@ func main() {
 	}
 	logger.InitLogger(*debug)
 	proxy.Init()
-	wg := &sync.WaitGroup{}
-	if *socks5Addr != "" {
-		s, err := socks.NewSocks5(*socks5Addr, *raddr, *secret)
-		if err != nil {
-			g.Fatal(err)
-		}
-		wg.Add(1)
-		go func() {
-			s.Wait()
-			wg.Done()
-		}()
+	s, err := NewlocalProxyServer(*addr, *raddr, *secret)
+	if err != nil {
+		g.Fatal(err)
 	}
-	if *httpAddr != "" {
-		h, err := http_connect.NewHttpConnect(*httpAddr, *raddr, *secret)
-		if err != nil {
-			g.Fatal(err)
-		}
-		wg.Add(1)
-		go func() {
-			h.Wait()
-			wg.Done()
-		}()
-	}
-	wg.Wait()
+	s.Wait()
 }

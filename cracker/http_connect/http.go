@@ -6,31 +6,40 @@ import (
 	"io"
 	"net"
 
+	"net/url"
+	"strings"
+
 	"github.com/lovedboy/cracker/cracker/logger"
 	"github.com/lovedboy/cracker/cracker/proxy"
 )
 
 var g = logger.GetLogger()
 
-type httpConnect struct {
-	raddr  string
-	secret string
-	wait   chan bool
+type HttpConnect struct {
+	Raddr  string
+	Secret string
 }
 
-func (h *httpConnect) handleConn(conn net.Conn) {
+func (h *HttpConnect) HandleConn(msg []byte, conn net.Conn) {
 
-	defer conn.Close()
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
+	var method, addr, host string
+	fmt.Sscanf(string(msg[:bytes.IndexByte(msg, '\n')]), "%s%s", &method, &host)
+	hostPortURL, err := url.Parse(host)
 	if err != nil {
-		g.Errorf("read err:%s", err)
+		g.Error(err)
 		return
 	}
-	var method, addr string
-	fmt.Sscanf(string(buf[:bytes.IndexByte(buf[:n], '\n')]), "%s%s", &method, &addr)
+	if strings.Index(hostPortURL.Host, ":") == -1 {
+		if hostPortURL.Opaque == "443" {
+			addr = hostPortURL.Scheme + ":443"
+		} else {
+			addr = hostPortURL.Host + ":80"
+		}
+	} else {
+		addr = hostPortURL.Host
+	}
 	g.Debugf("will connect %s ... ", addr)
-	lp, err := proxy.Connect(h.raddr, addr, h.secret)
+	lp, err := proxy.Connect(h.Raddr, addr, h.Secret)
 	if err != nil {
 		g.Errorf("proxy connect err:%s", err)
 		return
@@ -38,7 +47,7 @@ func (h *httpConnect) handleConn(conn net.Conn) {
 	if method == "CONNECT" {
 		conn.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n")) //响应客户端连接成功
 	} else {
-		conn.Write(buf[:n])
+		lp.Write(msg)
 	}
 	//进行转发
 	go func() {
@@ -50,34 +59,4 @@ func (h *httpConnect) handleConn(conn net.Conn) {
 	}()
 	io.Copy(lp, conn)
 	lp.Close()
-	g.Debugf("close connection with %s", conn.RemoteAddr().String())
-
-}
-
-func (h *httpConnect) Wait() {
-	<-h.wait
-}
-
-func NewHttpConnect(addr, raddr, secret string) (h *httpConnect, err error) {
-	l, err := net.Listen("tcp", addr)
-	if err != nil {
-		return nil, err
-	}
-	g.Infof("http proxy listen at:[%s]", addr)
-	h = &httpConnect{
-		raddr:  raddr,
-		secret: secret,
-		wait:   make(chan bool),
-	}
-	go func() {
-		for {
-			conn, err := l.Accept()
-			if err != nil {
-				g.Errorf("accept err:%s", err)
-			}
-			go h.handleConn(conn)
-
-		}
-	}()
-	return h, nil
 }
