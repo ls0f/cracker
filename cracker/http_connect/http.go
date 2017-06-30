@@ -38,12 +38,12 @@ func (h *HttpConnect) HandleConn(msg []byte, conn net.Conn) {
 	} else {
 		addr = hostPortURL.Host
 	}
-	g.Debugf("will connect %s ... ", addr)
 	lp, err := proxy.Connect(h.Raddr, addr, h.Secret)
 	if err != nil {
 		g.Errorf("proxy connect err:%s", err)
 		return
 	}
+	g.Debugf("connect %s success", addr)
 	if method == "CONNECT" {
 		conn.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n")) //响应客户端连接成功
 	} else {
@@ -59,4 +59,5 @@ func (h *HttpConnect) HandleConn(msg []byte, conn net.Conn) {
 	}()
 	io.Copy(lp, conn)
 	lp.Close()
+	g.Debugf("disconnect %s", addr)
 }
