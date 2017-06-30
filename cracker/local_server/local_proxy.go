@@ -41,7 +41,7 @@ func (s *localProxyServer) Wait() {
 	<-s.wait
 }
 
-func NewlocalProxyServer(addr, raddr, secret string) (s *localProxyServer, err error) {
+func NewLocalProxyServer(addr, raddr, secret string) (s *localProxyServer, err error) {
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err

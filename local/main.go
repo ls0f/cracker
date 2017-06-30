@@ -32,7 +32,7 @@ func main() {
 	}
 	logger.InitLogger(*debug)
 	proxy.Init()
-	s, err := NewlocalProxyServer(*addr, *raddr, *secret)
+	s, err := NewLocalProxyServer(*addr, *raddr, *secret)
 	if err != nil {
 		g.Fatal(err)
 	}

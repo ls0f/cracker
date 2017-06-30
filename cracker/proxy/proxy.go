@@ -3,32 +3,44 @@ package proxy
 import (
 	"net"
 	"time"
-)
 
-const (
-	sendTimeOut = 15
+	"github.com/anacrolix/sync"
 )
-
-type dataBodyTyp struct {
-	typ  string
-	body []byte
-}
 
 type proxyConn struct {
-	remote       net.Conn
-	uuid         string
-	writeChannel chan dataBodyTyp
-	close        chan bool
+	remote net.Conn
+	uuid   string
+	close  chan struct{}
+	heart  chan struct{}
+	quit   chan struct{}
+	sync.Mutex
 }
 
 func newProxyConn(remote net.Conn, uuid string) *proxyConn {
 	return &proxyConn{remote: remote, uuid: uuid,
-		writeChannel: make(chan dataBodyTyp, 10),
-		close:        make(chan bool),
+		close: make(chan struct{}),
+		heart: make(chan struct{}),
 	}
 }
 
-func (pc *proxyConn) work() {
+func (pc *proxyConn) Close() {
+	select {
+	case pc.close <- struct{}{}:
+	default:
+
+	}
+}
+
+func (pc *proxyConn) Heart() {
+	select {
+	case pc.heart <- struct{}{}:
+	default:
+	}
+}
+
+func (pc *proxyConn) Do() {
+
+	defer pc.remote.Close()
 
 	for {
 		select {
@@ -36,19 +48,8 @@ func (pc *proxyConn) work() {
 			return
 		case <-pc.close:
 			return
-		case d := <-pc.writeChannel:
-			switch d.typ {
-			case QUIT_TYP:
-				return
-			case HEART_TYP:
-				continue
-			case DATA_TYP:
-				if _, err := pc.remote.Write(d.body); err != nil {
-					g.Debugf("write err: %s", err)
-					return
-				}
-			}
-
+		case <-pc.heart:
+			continue
 		}
 	}
 }

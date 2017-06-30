@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"gopkg.in/bufio.v1"
@@ -51,8 +50,6 @@ type localProxyConn struct {
 	uuid        string
 	server      string
 	secret      string
-	read_buffer []byte
-	read_mutex  sync.Mutex
 	source      io.ReadCloser
 	close       chan bool
 }

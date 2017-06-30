@@ -45,7 +45,7 @@ func (s *Socks5) HandleConn(msg []byte, conn net.Conn) {
 	//进行转发
 	go func() {
 		_, err := io.Copy(conn, lp)
-		if err != nil {
+		if err != nil && err != io.EOF {
 			g.Debugf("read err: %s", err)
 		}
 		lp.CloseRead()
