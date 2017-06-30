@@ -3,6 +3,8 @@ package local_server
 import (
 	"net"
 
+	"io"
+
 	"github.com/lovedboy/cracker/cracker/http_connect"
 	"github.com/lovedboy/cracker/cracker/logger"
 	"github.com/lovedboy/cracker/cracker/socks"
@@ -22,7 +24,9 @@ func (s *localProxyServer) handleConn(conn net.Conn) {
 	buf := make([]byte, 1024)
 	n, err := conn.Read(buf)
 	if err != nil {
-		g.Errorf("read err:%s", err)
+		if err != io.EOF {
+			g.Errorf("read err:%s", err)
+		}
 		return
 	}
 
