@@ -3,8 +3,6 @@ package proxy
 import (
 	"net"
 	"time"
-
-	"github.com/anacrolix/sync"
 )
 
 type proxyConn struct {
@@ -12,8 +10,6 @@ type proxyConn struct {
 	uuid   string
 	close  chan struct{}
 	heart  chan struct{}
-	quit   chan struct{}
-	sync.Mutex
 }
 
 func newProxyConn(remote net.Conn, uuid string) *proxyConn {
