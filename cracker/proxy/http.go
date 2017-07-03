@@ -124,7 +124,9 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 				w.Write(buf[:n])
 			}
 			if err != nil {
-				g.Debugf("read err:%s", err)
+				if err != io.EOF {
+					g.Debugf("read err:%s", err)
+				}
 				return
 			}
 		}
@@ -152,7 +154,7 @@ func (hp *httpProxy) push(w http.ResponseWriter, r *http.Request) {
 			pc.Close()
 		case DATA_TYP:
 			_, err := io.Copy(pc.remote, r.Body)
-			if err != io.EOF {
+			if err != nil && err != io.EOF {
 				g.Debugf("write err:%v", err)
 				pc.Close()
 			}
@@ -172,13 +174,12 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 	host := r.Header.Get("DSTHOST")
 	port := r.Header.Get("DSTPORT")
 	addr := fmt.Sprintf("%s:%s", host, port)
-	g.Debugf("Connecting to %s:...", addr)
 	remote, err := net.DialTimeout("tcp", addr, time.Duration(time.Second*timeout))
 	if err != nil {
-		WriteHTTPError(w, fmt.Sprintf("Could not connect to %s", addr))
+		WriteHTTPError(w, fmt.Sprintf("could not connect to %s", addr))
 		return
 	}
-	g.Debugf("Connect to %s: success ...", addr)
+	g.Debugf("connect %s success", addr)
 	proxyID := uuid.New()
 	pc := newProxyConn(remote, proxyID)
 	hp.Lock()
@@ -187,7 +188,7 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		pc.Do()
-		g.Debugf("close connection with %s ... ", remote.RemoteAddr().String())
+		g.Debugf("disconnect %s", remote.RemoteAddr().String())
 		<-time.After(time.Duration(time.Second * heartTTL))
 		hp.Lock()
 		g.Debugf("delete uuid:%s ... \n", proxyID)

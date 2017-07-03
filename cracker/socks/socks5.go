@@ -35,12 +35,12 @@ func (s *Socks5) HandleConn(msg []byte, conn net.Conn) {
 
 	addr := net.JoinHostPort(host, port)
 
-	g.Debugf("will connect %s ... ", addr)
 	lp, err := proxy.Connect(s.Raddr, addr, s.Secret)
 	if err != nil {
 		g.Errorf("proxy connect err:%s", err)
 		return
 	}
+	g.Debugf("connect %s success", addr)
 	conn.Write([]byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}) //响应客户端连接成功
 	//进行转发
 	go func() {
@@ -52,4 +52,5 @@ func (s *Socks5) HandleConn(msg []byte, conn net.Conn) {
 	}()
 	io.Copy(lp, conn)
 	lp.Close()
+	g.Debugf("disconnect %s", addr)
 }

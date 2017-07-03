@@ -37,8 +37,6 @@ func (s *localProxyServer) handleConn(conn net.Conn) {
 	} else {
 		s.http.HandleConn(buf[:n], conn)
 	}
-	g.Debugf("close connection with %s", conn.RemoteAddr().String())
-
 }
 
 func (s *localProxyServer) Wait() {
