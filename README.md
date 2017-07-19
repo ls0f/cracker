@@ -47,18 +47,14 @@ It is strongly recommended to open the https option on the server side.
 
 ### Notice
 
-The file name of certificate and private key must be `cert.pem` and `key.pem` and with the server bin under the same folder.
-
 If you have a ssl certificate, It would be easy.
 
-copy the certificate and private key into the same folder with server bin
-
 ```
-./server -addr :8080 -secret <password> -https
+./server -addr :443 -secret <password> -https -cert /etc/cert.pem -key /etc/key.pem
 ```
 
 ```
-./local -raddr https://example.com:8080 -secret <password>
+./local -raddr https://example.com -secret <password>
 ```
 
 Of Course, you can create a self-signed ssl certificate by openssl.
@@ -68,12 +64,11 @@ sh -c "$(curl https://raw.githubusercontent.com/lovedboy/cracker/master/gen_key_
 ```
 
 ```
-./server -addr :8080 -secret <password> -https
+./server -addr :443 -secret <password> -https -cert /etc/self-signed-cert.pem -key /etc/self-ca-key.pem
 ```
-copy the certificate into the same folder with local bin.
 
 ```
-./local -raddr https://<ip>:8080 -secret <password>
+./local -raddr https://example.com -secret <password> -cert /etc/self-signed-cert.pem
 ```
 
 

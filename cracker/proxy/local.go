@@ -26,15 +26,15 @@ var tr = &http.Transport{
 	Proxy:               http.ProxyFromEnvironment,
 }
 
-func Init() {
-	if f, err := os.Stat("cert.pem"); err == nil && !f.IsDir() {
+func Init(cert string) {
+	if f, err := os.Stat(cert); err == nil && !f.IsDir() {
 		var CAPOOL *x509.CertPool
 		CAPOOL, err := x509.SystemCertPool()
 		if err != nil {
 			g.Warning(err)
 			CAPOOL = x509.NewCertPool()
 		}
-		serverCert, err := ioutil.ReadFile("cert.pem")
+		serverCert, err := ioutil.ReadFile(cert)
 		if err != nil {
 			g.Errorf("read cert.pem err:%s ", err)
 			return
@@ -42,7 +42,7 @@ func Init() {
 		CAPOOL.AppendCertsFromPEM(serverCert)
 		config := &tls.Config{RootCAs: CAPOOL}
 		tr.TLSClientConfig = config
-		g.Info("load cert.pem success ... ")
+		g.Infof("load %s success ... ", cert)
 	}
 }
 

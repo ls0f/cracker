@@ -55,21 +55,23 @@ func NewHttpProxy(addr, secret string, https bool) *httpProxy {
 	}
 }
 
-func (hp *httpProxy) Listen() {
+func (hp *httpProxy) handler() {
 	http.HandleFunc(CONNECT, hp.connect)
 	http.HandleFunc(PULL, hp.pull)
 	http.HandleFunc(PUSH, hp.push)
 	http.HandleFunc(PING, hp.ping)
+}
+
+func (hp *httpProxy) ListenHTTPS(cert, key string) {
+	hp.handler()
 	g.Infof("listen at:[%s]", hp.addr)
-	var err error
-	if hp.https {
-		err = http.ListenAndServeTLS(hp.addr, "cert.pem", "key.pem", nil)
-	} else {
-		err = http.ListenAndServe(hp.addr, nil)
-	}
-	if err != nil {
-		g.Fatal("ListenAndServe: ", err)
-	}
+	g.Fatal("ListenAndServe: ", http.ListenAndServeTLS(hp.addr, cert, key, nil))
+}
+
+func (hp *httpProxy) Listen() {
+	hp.handler()
+	g.Infof("listen at:[%s]", hp.addr)
+	g.Fatal("ListenAndServe: ", http.ListenAndServe(hp.addr, nil))
 }
 
 func (hp *httpProxy) verify(r *http.Request) error {

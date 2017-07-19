@@ -23,6 +23,7 @@ func main() {
 	secret := flag.String("secret", "", "secret key")
 	debug := flag.Bool("debug", false, "debug mode")
 	version := flag.Bool("v", false, "version")
+	cert := flag.String("cert", "", "cert file")
 	flag.Parse()
 
 	if *version {
@@ -31,7 +32,9 @@ func main() {
 		os.Exit(0)
 	}
 	logger.InitLogger(*debug)
-	proxy.Init()
+	if *cert != "" {
+		proxy.Init(*cert)
+	}
 	s, err := NewLocalProxyServer(*addr, *raddr, *secret)
 	if err != nil {
 		g.Fatal(err)

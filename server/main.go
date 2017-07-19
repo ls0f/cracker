@@ -23,6 +23,8 @@ func main() {
 	debug := flag.Bool("debug", false, "debug mode")
 	version := flag.Bool("v", false, "version")
 	https := flag.Bool("https", false, "https")
+	cert := flag.String("cert", "", "cert file")
+	key := flag.String("key", "", "private key file")
 	flag.Parse()
 	logger.InitLogger(*debug)
 	if *version {
@@ -30,23 +32,25 @@ func main() {
 		fmt.Printf("BuildTime: %s \n", BuildTime)
 		os.Exit(0)
 	}
-	if *https {
-		f, err := os.Stat("cert.pem")
-		if err != nil {
-			g.Fatal(err)
-		}
-		if f.IsDir() {
-			g.Fatal("cert.pem should be file")
-		}
-		f, err = os.Stat("key.pem")
-		if err != nil {
-			g.Fatal(err)
-		}
-		if f.IsDir() {
-			g.Fatal("key.pem should be file")
-		}
-	}
 	p := proxy.NewHttpProxy(*addr, *secret, *https)
-	p.Listen()
+	if *https {
+		f, err := os.Stat(*cert)
+		if err != nil {
+			g.Fatal(err)
+		}
+		if f.IsDir() {
+			g.Fatal("cert should be file")
+		}
+		f, err = os.Stat(*key)
+		if err != nil {
+			g.Fatal(err)
+		}
+		if f.IsDir() {
+			g.Fatal("key should be file")
+		}
+		p.ListenHTTPS(*cert, *key)
+	} else {
+		p.Listen()
+	}
 
 }
