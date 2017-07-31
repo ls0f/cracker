@@ -24,6 +24,7 @@ var tr = &http.Transport{
 	DisableKeepAlives:   false,
 	MaxIdleConnsPerHost: PerHostNum,
 	Proxy:               http.ProxyFromEnvironment,
+	TLSHandshakeTimeout: time.Duration(time.Second * timeout / 2),
 }
 
 func Init(cert string) {
@@ -43,6 +44,10 @@ func Init(cert string) {
 		config := &tls.Config{RootCAs: CAPOOL}
 		tr.TLSClientConfig = config
 		g.Infof("load %s success ... ", cert)
+	} else if err != nil {
+		g.Error(err)
+	} else {
+		g.Errorf("%s is a dir", cert)
 	}
 }
 
@@ -63,7 +68,7 @@ func (c *localProxyConn) gen_sign(req *http.Request) {
 }
 
 func (c *localProxyConn) push(data []byte, typ string) error {
-	hc := &http.Client{Transport: tr, Timeout: time.Duration(time.Second * heartTTL)}
+	hc := &http.Client{Transport: tr, Timeout: time.Duration(time.Second * timeout)}
 	buf := bufio.NewBuffer(data)
 	req, _ := http.NewRequest("POST", c.server+PUSH, buf)
 	c.gen_sign(req)
@@ -85,7 +90,7 @@ func (c *localProxyConn) push(data []byte, typ string) error {
 }
 
 func (c *localProxyConn) connect(dstHost, dstPort string) (uuid string, err error) {
-	hc := &http.Client{Transport: tr, Timeout: time.Duration(time.Second * heartTTL)}
+	hc := &http.Client{Transport: tr, Timeout: time.Duration(time.Second * timeout)}
 	req, _ := http.NewRequest("GET", c.server+CONNECT, nil)
 	c.gen_sign(req)
 	req.Header.Set("DSTHOST", dstHost)
@@ -144,7 +149,7 @@ func (c *localProxyConn) alive() {
 		select {
 		case <-c.close:
 			return
-		case <-time.After(time.Duration(time.Second * timeout)):
+		case <-time.After(time.Duration(time.Second * heartTTL / 2)):
 			if err := c.push([]byte("alive"), HEART_TYP); err != nil {
 				return
 			}

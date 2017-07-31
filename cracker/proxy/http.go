@@ -36,7 +36,7 @@ const (
 const (
 	timeout  = 10
 	signTTL  = 10
-	heartTTL = 30
+	heartTTL = 60
 )
 
 type httpProxy struct {
