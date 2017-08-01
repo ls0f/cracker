@@ -176,7 +176,7 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 	host := r.Header.Get("DSTHOST")
 	port := r.Header.Get("DSTPORT")
 	addr := fmt.Sprintf("%s:%s", host, port)
-	remote, err := net.DialTimeout("tcp", addr, time.Duration(time.Second*timeout))
+	remote, err := net.DialTimeout("tcp", addr, time.Second*timeout)
 	if err != nil {
 		WriteHTTPError(w, fmt.Sprintf("could not connect to %s", addr))
 		return
@@ -191,7 +191,7 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		pc.Do()
 		g.Debugf("disconnect %s", remote.RemoteAddr().String())
-		<-time.After(time.Duration(time.Second * heartTTL))
+		<-time.After(time.Second * heartTTL)
 		hp.Lock()
 		g.Debugf("delete uuid:%s ... \n", proxyID)
 		delete(hp.proxyMap, proxyID)

@@ -24,7 +24,8 @@ var tr = &http.Transport{
 	DisableKeepAlives:   false,
 	MaxIdleConnsPerHost: PerHostNum,
 	Proxy:               http.ProxyFromEnvironment,
-	TLSHandshakeTimeout: time.Duration(time.Second * timeout / 2),
+	TLSHandshakeTimeout: time.Second * timeout / 2,
+	IdleConnTimeout:     time.Second * 90,
 }
 
 func Init(cert string) {
@@ -68,7 +69,7 @@ func (c *localProxyConn) gen_sign(req *http.Request) {
 }
 
 func (c *localProxyConn) push(data []byte, typ string) error {
-	hc := &http.Client{Transport: tr, Timeout: time.Duration(time.Second * timeout)}
+	hc := &http.Client{Transport: tr, Timeout: time.Second * timeout}
 	buf := bufio.NewBuffer(data)
 	req, _ := http.NewRequest("POST", c.server+PUSH, buf)
 	c.gen_sign(req)
@@ -90,7 +91,7 @@ func (c *localProxyConn) push(data []byte, typ string) error {
 }
 
 func (c *localProxyConn) connect(dstHost, dstPort string) (uuid string, err error) {
-	hc := &http.Client{Transport: tr, Timeout: time.Duration(time.Second * timeout)}
+	hc := &http.Client{Transport: tr, Timeout: time.Second * timeout}
 	req, _ := http.NewRequest("GET", c.server+CONNECT, nil)
 	c.gen_sign(req)
 	req.Header.Set("DSTHOST", dstHost)
@@ -149,7 +150,7 @@ func (c *localProxyConn) alive() {
 		select {
 		case <-c.close:
 			return
-		case <-time.After(time.Duration(time.Second * heartTTL / 2)):
+		case <-time.After(time.Second * heartTTL / 2):
 			if err := c.push([]byte("alive"), HEART_TYP); err != nil {
 				return
 			}

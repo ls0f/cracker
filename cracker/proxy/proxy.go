@@ -40,7 +40,7 @@ func (pc *proxyConn) Do() {
 
 	for {
 		select {
-		case <-time.After(time.Duration(time.Second * heartTTL)):
+		case <-time.After(time.Second * heartTTL):
 			return
 		case <-pc.close:
 			return
