@@ -12,6 +12,7 @@ LDFLAGS := -ldflags "-X main.GitTag=${GITTAG} -X main.BuildTime=${BUILD_TIME}"
 
 vendor:
 	go get ./...
+	go get github.com/stretchr/testify/assert
 
 
 test:
