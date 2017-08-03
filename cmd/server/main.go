@@ -28,6 +28,7 @@ func main() {
 		fmt.Printf("BuildTime: %s \n", BuildTime)
 		os.Exit(0)
 	}
+	defer g.Flush()
 	p := cracker.NewHttpProxy(*addr, *secret, *https)
 	if *https {
 		f, err := os.Stat(*cert)

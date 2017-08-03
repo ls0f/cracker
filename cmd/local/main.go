@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	g "github.com/golang/glog"
 	"github.com/ls0f/cracker"
 	p "github.com/ls0f/proxylib"
 )
@@ -23,6 +24,8 @@ func main() {
 	cert := flag.String("cert", "", "cert file")
 	flag.Parse()
 
+	defer g.Flush()
+
 	if *version {
 		fmt.Printf("GitTag: %s \n", GitTag)
 		fmt.Printf("BuildTime: %s \n", BuildTime)
@@ -39,5 +42,5 @@ func main() {
 	}
 	s.HTTPHandler = handler
 	s.Socks5Handler = handler
-	s.ListenAndServe()
+	g.Fatal(s.ListenAndServe())
 }
