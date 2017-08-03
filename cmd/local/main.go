@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lovedboy/cracker"
-	p "github.com/lovedboy/proxylib"
+	"github.com/ls0f/cracker"
+	p "github.com/ls0f/proxylib"
 )
 
 var (

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	g "github.com/golang/glog"
-	"github.com/lovedboy/cracker"
+	"github.com/ls0f/cracker"
 )
 
 var (
