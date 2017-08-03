@@ -1,4 +1,4 @@
-package proxy
+package cracker
 
 import (
 	"crypto/hmac"

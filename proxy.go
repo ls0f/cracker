@@ -1,7 +1,8 @@
-package proxy
+package cracker
 
 import (
 	"net"
+	"sync"
 	"time"
 )
 
@@ -10,6 +11,8 @@ type proxyConn struct {
 	uuid   string
 	close  chan struct{}
 	heart  chan struct{}
+	sync.Mutex
+	hasClosed bool
 }
 
 func newProxyConn(remote net.Conn, uuid string) *proxyConn {
@@ -20,11 +23,20 @@ func newProxyConn(remote net.Conn, uuid string) *proxyConn {
 }
 
 func (pc *proxyConn) Close() {
+	pc.Lock()
+	pc.hasClosed = true
+	pc.Unlock()
 	select {
 	case pc.close <- struct{}{}:
 	default:
 
 	}
+}
+
+func (pc *proxyConn) IsClosed() bool {
+	pc.Lock()
+	defer pc.Unlock()
+	return pc.hasClosed
 }
 
 func (pc *proxyConn) Heart() {

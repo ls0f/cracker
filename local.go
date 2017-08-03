@@ -1,4 +1,4 @@
-package proxy
+package cracker
 
 import (
 	"crypto/tls"
@@ -9,9 +9,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
+	g "github.com/golang/glog"
 	"gopkg.in/bufio.v1"
 )
 
@@ -53,11 +53,12 @@ func Init(cert string) {
 }
 
 type localProxyConn struct {
-	uuid   string
-	server string
-	secret string
-	source io.ReadCloser
-	close  chan bool
+	uuid     string
+	server   string
+	secret   string
+	source   io.ReadCloser
+	close    chan bool
+	interval time.Duration
 }
 
 func (c *localProxyConn) gen_sign(req *http.Request) {
@@ -111,38 +112,62 @@ func (c *localProxyConn) connect(dstHost, dstPort string) (uuid string, err erro
 
 func (c *localProxyConn) pull() error {
 
-	hc := &http.Client{Transport: tr}
+	var (
+		hc *http.Client
+	)
+	if c.interval > 0 {
+		hc = &http.Client{Transport: tr, Timeout: time.Second * timeout}
+	} else {
+		hc = &http.Client{Transport: tr}
+	}
 
 	req, _ := http.NewRequest("GET", c.server+PULL, nil)
+	req.Header.Set("Interval", fmt.Sprintf("%d", c.interval))
 	c.gen_sign(req)
 	res, err := hc.Do(req)
 	if err != nil {
 		return err
 	}
+	if res.StatusCode != HeadOK {
+		body, _ := ioutil.ReadAll(res.Body)
+		res.Body.Close()
+		return errors.New(fmt.Sprintf("status code is %d, body is %s", res.StatusCode, string(body)))
+	}
 	c.source = res.Body
 	return nil
 }
 
-func (c *localProxyConn) Read(b []byte) (int, error) {
+func (c *localProxyConn) Read(b []byte) (n int, err error) {
+
 	if c.source == nil {
-		return 0, errors.New("pull http connection is not ready")
+		if c.interval > 0 {
+			if err = c.pull(); err != nil {
+				return
+			}
+		} else {
+			return 0, errors.New("pull http connection is not ready")
+		}
 	}
-	return c.source.Read(b)
+	n, err = c.source.Read(b)
+	if err != nil {
+		c.source.Close()
+		c.source = nil
+	}
+	if err == io.EOF && c.interval > 0 {
+		err = nil
+	}
+	return
 }
 
 func (c *localProxyConn) Write(b []byte) (int, error) {
 
 	err := c.push(b, DATA_TYP)
 	if err != nil {
-		g.Debugf("push err %v ... \n", err)
+		g.V(LDEBUG).Infof("push: %v", err)
 		return 0, err
 	}
 
 	return len(b), nil
-}
-
-func (c *localProxyConn) CloseRead() error {
-	return c.source.Close()
 }
 
 func (c *localProxyConn) alive() {
@@ -158,32 +183,11 @@ func (c *localProxyConn) alive() {
 	}
 }
 
-func (c *localProxyConn) quit() {
-	c.push([]byte("quit"), QUIT_TYP)
+func (c *localProxyConn) quit() error {
+	return c.push([]byte("quit"), QUIT_TYP)
 }
 
-func (c *localProxyConn) Close() {
+func (c *localProxyConn) Close() error {
 	close(c.close)
-	c.quit()
-}
-
-func Connect(server, remote, secret string) (*localProxyConn, error) {
-	if strings.HasSuffix(server, "/") {
-		server = server[:len(server)-1]
-	}
-	conn := localProxyConn{server: server, secret: secret}
-	host := strings.Split(remote, ":")[0]
-	port := strings.Split(remote, ":")[1]
-	uuid, err := conn.connect(host, port)
-	if err != nil {
-		return nil, err
-	}
-	conn.uuid = uuid
-	err = conn.pull()
-	if err != nil {
-		return nil, err
-	}
-	conn.close = make(chan bool)
-	go conn.alive()
-	return &conn, nil
+	return c.quit()
 }
