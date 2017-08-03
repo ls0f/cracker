@@ -1,7 +1,7 @@
 
 
 MODULES := proxy logger
-BIN := server local
+BIN := cmd/server cmd/local
 
 GITTAG := `git describe --tags`
 VERSION := `git describe --abbrev=0 --tags`
@@ -30,7 +30,7 @@ build:
 	mkdir -p bin;\
 	echo ==================================; \
 	for m in $(BIN); do \
-		cd $(PWD)/$$m && go build ${LDFLAGS} -o ../bin/$$m --race ; \
+		cd $(PWD)/$$m && go build ${LDFLAGS} -o ../../bin/$$m --race ; \
 	done
 	echo ==================================; \
 	cd $(PWD) && cp gen_key_cert.sh ./bin
@@ -39,7 +39,7 @@ install: vendor build
 
 deploy:
 	for m in $(BIN); do \
-		cd $(PWD)/$$m && gox ${LDFLAGS} -osarch="linux/amd64" -output ../dist/{{.OS}}_{{.Arch}}_{{.Dir}};\
-		cd $(PWD)/$$m && gox ${LDFLAGS} -os="windows" -output ../dist/{{.OS}}_{{.Arch}}_{{.Dir}};\
-		cd $(PWD)/$$m && gox ${LDFLAGS} -osarch="darwin/amd64" -output ../dist/{{.OS}}_{{.Arch}}_{{.Dir}};\
+		cd $(PWD)/$$m && gox ${LDFLAGS} -osarch="linux/amd64" -output ../../dist/{{.OS}}_{{.Arch}}_{{.Dir}};\
+		cd $(PWD)/$$m && gox ${LDFLAGS} -os="windows" -output ../../dist/{{.OS}}_{{.Arch}}_{{.Dir}};\
+		cd $(PWD)/$$m && gox ${LDFLAGS} -osarch="darwin/amd64" -output ../../dist/{{.OS}}_{{.Arch}}_{{.Dir}};\
 	done

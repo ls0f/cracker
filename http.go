@@ -1,4 +1,4 @@
-package proxy
+package cracker
 
 import (
 	"net/http"
@@ -12,14 +12,12 @@ import (
 
 	"sync"
 
-	"github.com/lovedboy/cracker/cracker/logger"
+	g "github.com/golang/glog"
 
 	"io"
 
 	"github.com/pborman/uuid"
 )
-
-var g = logger.GetLogger()
 
 const (
 	CONNECT = "/connect"
@@ -37,6 +35,15 @@ const (
 	timeout  = 10
 	signTTL  = 10
 	heartTTL = 60
+)
+
+// Log level for glog
+const (
+	LFATAL = iota
+	LERROR
+	LWARNING
+	LINFO
+	LDEBUG
 )
 
 type httpProxy struct {
@@ -95,7 +102,7 @@ func (hp *httpProxy) verify(r *http.Request) error {
 func (hp *httpProxy) before(w http.ResponseWriter, r *http.Request) error {
 	err := hp.verify(r)
 	if err != nil {
-		g.Debug(err)
+		g.V(LDEBUG).Info(err)
 		WriteNotFoundError(w, "404")
 	}
 	return err
@@ -109,31 +116,56 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 	if err := hp.before(w, r); err != nil {
 		return
 	}
-	flusher, _ := w.(http.Flusher)
 	uuid := r.Header.Get("UUID")
 	hp.Lock()
 	pc, ok := hp.proxyMap[uuid]
 	hp.Unlock()
-	if ok {
-		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Header().Set("Transfer-Encoding", "chunked")
-		buf := make([]byte, 10240)
-		defer pc.Close()
-		for {
-			flusher.Flush()
-			n, err := pc.remote.Read(buf)
-			if n > 0 {
-				w.Write(buf[:n])
-			}
-			if err != nil {
+	if !ok {
+		WriteHTTPError(w, "uuid don't exist")
+		return
+	}
+	if pc.IsClosed() {
+		WriteHTTPError(w, "remote conn is closed")
+		return
+	}
+	w.Header().Set("Content-Type", "application/octet-stream")
+	interval := r.Header.Get("Interval")
+	if interval == "" {
+		interval = "0"
+	}
+	t, _ := strconv.ParseInt(interval, 10, 0)
+	if t > 0 {
+		pc.remote.SetReadDeadline(time.Now().Add(time.Duration(t)))
+		_, err := io.Copy(w, pc.remote)
+		if err != nil {
+			if err, ok := err.(net.Error); ok && err.Timeout() {
+			} else {
+				pc.Close()
 				if err != io.EOF {
-					g.Debugf("read err:%s", err)
+					WriteHTTPError(w, fmt.Sprintf("%s", err))
+					g.V(LDEBUG).Infof("read :%v", err)
 				}
-				return
 			}
 		}
-	} else {
-		WriteHTTPError(w, "uuid don't exist")
+
+		return
+	}
+	flusher, _ := w.(http.Flusher)
+	w.Header().Set("Transfer-Encoding", "chunked")
+	buf := make([]byte, 10240)
+	defer pc.Close()
+	for {
+		flusher.Flush()
+		n, err := pc.remote.Read(buf)
+		if n > 0 {
+			w.Write(buf[:n])
+		}
+		if err != nil {
+			if err != io.EOF {
+				g.V(LDEBUG).Infof("read :%v", err)
+			}
+			return
+		}
 	}
 }
 
@@ -145,26 +177,30 @@ func (hp *httpProxy) push(w http.ResponseWriter, r *http.Request) {
 	hp.Lock()
 	pc, ok := hp.proxyMap[uuid]
 	hp.Unlock()
-	if ok {
-
-		typ := r.Header.Get("TYP")
-		switch typ {
-		default:
-		case HEART_TYP:
-			pc.Heart()
-		case QUIT_TYP:
-			pc.Close()
-		case DATA_TYP:
-			_, err := io.Copy(pc.remote, r.Body)
-			if err != nil && err != io.EOF {
-				g.Debugf("write err:%v", err)
-				pc.Close()
-			}
-		}
-
-	} else {
+	if !ok {
 		WriteHTTPError(w, "uuid don't exist")
+		return
 	}
+	if pc.IsClosed() {
+		WriteHTTPError(w, "remote conn is closed")
+		return
+	}
+
+	typ := r.Header.Get("TYP")
+	switch typ {
+	default:
+	case HEART_TYP:
+		pc.Heart()
+	case QUIT_TYP:
+		pc.Close()
+	case DATA_TYP:
+		_, err := io.Copy(pc.remote, r.Body)
+		if err != nil && err != io.EOF {
+			g.V(LDEBUG).Infof("write :%v", err)
+			pc.Close()
+		}
+	}
+
 }
 
 func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
@@ -178,10 +214,10 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 	addr := fmt.Sprintf("%s:%s", host, port)
 	remote, err := net.DialTimeout("tcp", addr, time.Second*timeout)
 	if err != nil {
-		WriteHTTPError(w, fmt.Sprintf("could not connect to %s", addr))
+		WriteHTTPError(w, fmt.Sprintf("connect %s %v", addr, err))
 		return
 	}
-	g.Debugf("connect %s success", addr)
+	g.V(LINFO).Infof("connect %s success", addr)
 	proxyID := uuid.New()
 	pc := newProxyConn(remote, proxyID)
 	hp.Lock()
@@ -190,10 +226,10 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		pc.Do()
-		g.Debugf("disconnect %s", remote.RemoteAddr().String())
+		g.V(LDEBUG).Infof("disconnect %s", remote.RemoteAddr().String())
 		<-time.After(time.Second * heartTTL)
 		hp.Lock()
-		g.Debugf("delete uuid:%s ... \n", proxyID)
+		g.V(LDEBUG).Infof("delete uuid:%s ... \n", proxyID)
 		delete(hp.proxyMap, proxyID)
 		hp.Unlock()
 	}()
