@@ -11,4 +11,4 @@ fi
 
 make deploy
 
-ghr -u lovedboy -t $GITHUB_TOKEN -r cracker --replace  --debug $TRAVIS_TAG  dist/
+ghr -u ls0f -t $GITHUB_TOKEN -r cracker --replace  --debug $TRAVIS_TAG  dist/
