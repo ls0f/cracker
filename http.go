@@ -142,7 +142,6 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 			} else {
 				pc.Close()
 				if err != io.EOF {
-					WriteHTTPError(w, fmt.Sprintf("%s", err))
 					g.V(LDEBUG).Infof("read :%v", err)
 				}
 			}
