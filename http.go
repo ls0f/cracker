@@ -46,6 +46,10 @@ const (
 	LDEBUG
 )
 
+const (
+	version = "20170803"
+)
+
 type httpProxy struct {
 	addr     string
 	secret   string
@@ -109,6 +113,7 @@ func (hp *httpProxy) before(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (hp *httpProxy) ping(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Version", version)
 	w.Write([]byte("pong"))
 }
 
