@@ -14,12 +14,12 @@ import (
 var (
 	lock            sync.Mutex
 	serverHaveStart bool
-	p               *httpProxy
+	testP           *httpProxy
 )
 
 const (
-	addr   = ":12245"
-	secret = "12345"
+	testAddr   = ":12245"
+	testSecret = "12345"
 )
 
 func startProxyServer() {
@@ -28,8 +28,8 @@ func startProxyServer() {
 	if serverHaveStart {
 		return
 	}
-	p = NewHttpProxy(addr, secret, false)
-	go p.Listen()
+	testP = NewHttpProxy(testAddr, testSecret, false)
+	go testP.Listen()
 	time.Sleep(time.Millisecond * 100)
 	serverHaveStart = true
 }
@@ -37,7 +37,7 @@ func startProxyServer() {
 func TestHandler_Connect(t *testing.T) {
 	startProxyServer()
 
-	res, err := http.Get(fmt.Sprintf("http://127.0.0.1%s%s", addr, CONNECT))
+	res, err := http.Get(fmt.Sprintf("http://127.0.0.1%s%s", testAddr, CONNECT))
 	if err != nil {
 		assert.NoError(t, err)
 	}
