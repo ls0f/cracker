@@ -145,10 +145,10 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			if err, ok := err.(net.Error); ok && err.Timeout() {
 			} else {
-				pc.Close()
-				if err != io.EOF {
-					g.V(LDEBUG).Infof("read :%v", err)
+				if err != io.EOF && !pc.IsClosed() {
+					g.V(LERROR).Infof("read :%v", err)
 				}
+				pc.Close()
 			}
 		}
 
@@ -165,8 +165,8 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 			w.Write(buf[:n])
 		}
 		if err != nil {
-			if err != io.EOF {
-				g.V(LDEBUG).Infof("read :%v", err)
+			if err != io.EOF && !pc.IsClosed() {
+				g.V(LERROR).Info(err)
 			}
 			return
 		}
@@ -200,7 +200,9 @@ func (hp *httpProxy) push(w http.ResponseWriter, r *http.Request) {
 	case DATA_TYP:
 		_, err := io.Copy(pc.remote, r.Body)
 		if err != nil && err != io.EOF {
-			g.V(LDEBUG).Infof("write :%v", err)
+			if !pc.IsClosed() {
+				g.V(LERROR).Info(err)
+			}
 			pc.Close()
 		}
 	}
@@ -230,12 +232,10 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		pc.Do()
-		g.V(LDEBUG).Infof("disconnect %s", remote.RemoteAddr().String())
-		<-time.After(time.Second * heartTTL)
 		hp.Lock()
-		g.V(LDEBUG).Infof("delete uuid:%s ... \n", proxyID)
 		delete(hp.proxyMap, proxyID)
 		hp.Unlock()
+		g.V(LINFO).Infof("disconnect %s", addr)
 	}()
 	WriteHTTPOK(w, proxyID)
 }

@@ -1,6 +1,8 @@
 package cracker
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -21,7 +23,7 @@ func (h *Handler) Connect(addr string) (io.ReadWriteCloser, error) {
 	port := strings.Split(addr, ":")[1]
 	uuid, err := conn.connect(host, port)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("connect %s %v", addr, err))
 	}
 	conn.uuid = uuid
 	if h.Interval == 0 {
