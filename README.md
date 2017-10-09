@@ -17,16 +17,8 @@ proxy over http[s], support http,socks5 proxy.
 
 # Install
 
-Download the latest binaries from this [release page](https://github.com/lovedboy/cracker/releases).
+Download the latest binaries from this [release page](https://github.com/ls0f/cracker/releases).
 
-You can also install from source if you have go installed.
-
-```
-# on server
-go get github.com/lovedboy/cracker/server
-# on local
-go get github.com/lovedboy/cracker/local
-```
 # Usage
 
 ## Server side (Run on your vps or other application container platform)
