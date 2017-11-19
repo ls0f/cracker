@@ -50,6 +50,8 @@ const (
 	version = "20170803"
 )
 
+var bufPool = &sync.Pool{New: func() interface{} { return make([]byte, 1024*8) }}
+
 type httpProxy struct {
 	addr     string
 	secret   string
@@ -138,10 +140,15 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 	if interval == "" {
 		interval = "0"
 	}
+	buf := bufPool.Get().([]byte)
+	defer bufPool.Put(buf)
 	t, _ := strconv.ParseInt(interval, 10, 0)
 	if t > 0 {
 		pc.remote.SetReadDeadline(time.Now().Add(time.Duration(t)))
-		_, err := io.Copy(w, pc.remote)
+		n, err := pc.remote.Read(buf)
+		if n > 0 {
+			w.Write(buf[:n])
+		}
 		if err != nil {
 			if err, ok := err.(net.Error); ok && err.Timeout() {
 			} else {
@@ -156,7 +163,6 @@ func (hp *httpProxy) pull(w http.ResponseWriter, r *http.Request) {
 	}
 	flusher, _ := w.(http.Flusher)
 	w.Header().Set("Transfer-Encoding", "chunked")
-	buf := make([]byte, 10240)
 	defer pc.Close()
 	for {
 		flusher.Flush()

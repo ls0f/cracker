@@ -1,6 +1,7 @@
 package cracker
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -10,7 +11,7 @@ import (
 	"net/http"
 	"os"
 	"time"
-	"context"
+
 	g "github.com/golang/glog"
 	"gopkg.in/bufio.v1"
 )
