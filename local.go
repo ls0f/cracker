@@ -10,23 +10,12 @@ import (
 	"net/http"
 	"os"
 	"time"
-
+	"context"
 	g "github.com/golang/glog"
 	"gopkg.in/bufio.v1"
 )
 
-const (
-	PerHostNum = 10
-)
-
-var tr = &http.Transport{
-
-	DisableKeepAlives:   false,
-	MaxIdleConnsPerHost: PerHostNum,
-	Proxy:               http.ProxyFromEnvironment,
-	TLSHandshakeTimeout: time.Second * timeout / 2,
-	IdleConnTimeout:     time.Second * 90,
-}
+var hc = &http.Client{}
 
 func Init(cert string) {
 	if f, err := os.Stat(cert); err == nil && !f.IsDir() {
@@ -42,8 +31,9 @@ func Init(cert string) {
 			return
 		}
 		CAPOOL.AppendCertsFromPEM(serverCert)
+		tp := hc.Transport.(*http.Transport)
 		config := &tls.Config{RootCAs: CAPOOL}
-		tr.TLSClientConfig = config
+		tp.TLSClientConfig = config
 		g.Infof("load %s success ... ", cert)
 	} else if err != nil {
 		g.Error(err)
@@ -70,7 +60,6 @@ func (c *localProxyConn) gen_sign(req *http.Request) {
 }
 
 func (c *localProxyConn) push(data []byte, typ string) error {
-	hc := &http.Client{Transport: tr, Timeout: time.Second * timeout}
 	buf := bufio.NewBuffer(data)
 	req, _ := http.NewRequest("POST", c.server+PUSH, buf)
 	c.gen_sign(req)
@@ -92,11 +81,13 @@ func (c *localProxyConn) push(data []byte, typ string) error {
 }
 
 func (c *localProxyConn) connect(dstHost, dstPort string) (uuid string, err error) {
-	hc := &http.Client{Transport: tr, Timeout: time.Second * timeout}
 	req, _ := http.NewRequest("GET", c.server+CONNECT, nil)
 	c.gen_sign(req)
 	req.Header.Set("DSTHOST", dstHost)
 	req.Header.Set("DSTPORT", dstPort)
+	cxt, cancel := context.WithTimeout(context.Background(), time.Second*timeout)
+	defer cancel()
+	req.WithContext(cxt)
 	res, err := hc.Do(req)
 	if err != nil {
 		return "", err
@@ -112,18 +103,15 @@ func (c *localProxyConn) connect(dstHost, dstPort string) (uuid string, err erro
 
 func (c *localProxyConn) pull() error {
 
-	var (
-		hc *http.Client
-	)
-	if c.interval > 0 {
-		hc = &http.Client{Transport: tr, Timeout: time.Second * timeout}
-	} else {
-		hc = &http.Client{Transport: tr}
-	}
-
 	req, _ := http.NewRequest("GET", c.server+PULL, nil)
 	req.Header.Set("Interval", fmt.Sprintf("%d", c.interval))
 	c.gen_sign(req)
+	if c.interval > 0 {
+		cxt, cancel := context.WithTimeout(context.Background(), time.Second*timeout)
+		defer cancel()
+		req.WithContext(cxt)
+
+	}
 	res, err := hc.Do(req)
 	if err != nil {
 		return err
