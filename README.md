@@ -52,7 +52,7 @@ If you have a ssl certificate, It would be easy.
 Of Course, you can create a self-signed ssl certificate by openssl.
 
 ```
-sh -c "$(curl https://raw.githubusercontent.com/lovedboy/cracker/master/gen_key_cert.sh)"
+sh -c "$(curl https://raw.githubusercontent.com/ls0f/cracker/master/gen_key_cert.sh)"
 ```
 
 ```
@@ -72,7 +72,7 @@ If you don't want to run the server side, I did for you :) you only need to run 
 ./local  -raddr https://lit-citadel-13724.herokuapp.com -secret 123456 -logtostderr
 ```
 
-[Deploy the server side on heroku](https://github.com/lovedboy/cracker-heroku)
+[Deploy the server side on heroku](https://github.com/ls0f/cracker-heroku)
 
 
 # Next
