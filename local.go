@@ -14,6 +14,7 @@ import (
 
 	g "github.com/golang/glog"
 	"gopkg.in/bufio.v1"
+	"net/url"
 )
 
 var hc = &http.Client{}
@@ -50,6 +51,7 @@ type localProxyConn struct {
 	source   io.ReadCloser
 	close    chan bool
 	interval time.Duration
+	dst      io.WriteCloser
 }
 
 func (c *localProxyConn) gen_sign(req *http.Request) {
@@ -60,11 +62,54 @@ func (c *localProxyConn) gen_sign(req *http.Request) {
 	req.Header.Set("sign", GenHMACSHA1(c.secret, ts))
 }
 
+func (c *localProxyConn) chunkPush(data []byte, typ string) error {
+	if c.dst != nil {
+		_, err := c.dst.Write(data)
+		return err
+	}
+	rd, wr := io.Pipe()
+	url, _ := url.Parse(c.server+PUSH)
+	req := &http.Request{
+		Method:           "POST",
+		URL:              url,
+		TransferEncoding: []string{"chunked"},
+		Body:             rd,
+		Header: 			make(map[string][]string),
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Host: url.Host,
+	}
+	// 这里必须
+	res, err := hc.Do(req)
+	if err != nil {
+		return err
+	}
+	_, err = wr.Write(data)
+	c.dst = wr
+	g.Infof("send %v", string(data))
+	flusher, _ := req.Body.(http.Flusher)
+	flusher.Flush()
+	go func()(err error) {
+		rd.Close()
+		wr.Close()
+		defer res.Body.Close()
+		body, _ := ioutil.ReadAll(res.Body)
+		switch res.StatusCode {
+		case HeadOK:
+			return nil
+		default:
+			return errors.New(fmt.Sprintf("status code is %d, body is: %s", res.StatusCode, string(body)))
+		}
+	}()
+	return err
+}
+
 func (c *localProxyConn) push(data []byte, typ string) error {
 	buf := bufio.NewBuffer(data)
 	req, _ := http.NewRequest("POST", c.server+PUSH, buf)
-	c.gen_sign(req)
 	req.Header.Set("TYP", typ)
+	c.gen_sign(req)
 	req.ContentLength = int64(len(data))
 	req.Header.Set("Content-Type", "image/jpeg")
 	res, err := hc.Do(req)
@@ -150,7 +195,13 @@ func (c *localProxyConn) Read(b []byte) (n int, err error) {
 
 func (c *localProxyConn) Write(b []byte) (int, error) {
 
-	err := c.push(b, DATA_TYP)
+	var err error
+	if c.interval > 0 {
+		err = c.push(b, DATA_TYP)
+	} else {
+		err = c.push(b, DATA_TYP)
+		//err = c.chunkPush(b, DATA_TYP)
+	}
 	if err != nil {
 		g.V(LDEBUG).Infof("push: %v", err)
 		return 0, err

@@ -17,7 +17,6 @@ import (
 	"io"
 
 	"github.com/pborman/uuid"
-	"net/http/internal"
 )
 
 const (
@@ -26,6 +25,8 @@ const (
 	PULL    = "/pull"
 	PUSH    = "/push"
 	DOWNLOAD = "/download"
+	CHUNK_PULL = "chunk_pull"
+	CHUNK_PUSH = "chunk_push"
 )
 const (
 	DATA_TYP  = "data"
@@ -86,7 +87,8 @@ func (hp *httpProxy) handler() {
 	http.HandleFunc(PULL, hp.pull)
 	http.HandleFunc(PUSH, hp.push)
 	http.HandleFunc(PING, hp.ping)
-	http.HandleFunc(DOWNLOAD, hp.download)
+	http.HandleFunc(CHUNK_PULL, hp.chunkPull)
+	http.HandleFunc(CHUNK_PUSH, hp.chunkPush)
 }
 
 func (hp *httpProxy) ListenHTTPS(cert, key string) {
@@ -265,16 +267,18 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 	WriteHTTPOK(w, proxyID)
 }
 
+
+// not used by now
+
 func (hp *httpProxy) chunkPush(w http.ResponseWriter, r *http.Request) {
 	if err := hp.before(w, r); err != nil {
 		return
 	}
-	reader := internal.NewChunkedReader(r.Body)
 	// 消息不超过8k
 	chunk := bufPool.Get().([]byte)
 	defer bufPool.Put(chunk)
 	for {
-		n, err := reader.Read(chunk)
+		n, err := r.Body.Read(chunk)
 		if n > 0 {
 			// unpack chunk
 		}
@@ -285,6 +289,8 @@ func (hp *httpProxy) chunkPush(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// not used by now
+
 func (hp *httpProxy) chunkPull(w http.ResponseWriter, r *http.Request) {
 	if err := hp.before(w, r); err != nil {
 		return
@@ -292,6 +298,7 @@ func (hp *httpProxy) chunkPull(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Transfer-Encoding", "chunked")
 	flusher, _ := w.(http.Flusher)
+	flusher.Flush()
 	buf := make([]byte, 10)
 	for {
 		_, err := w.Write(buf)
