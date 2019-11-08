@@ -24,6 +24,9 @@ const (
 	PING    = "/ping"
 	PULL    = "/pull"
 	PUSH    = "/push"
+	DOWNLOAD = "/download"
+	CHUNK_PULL = "chunk_pull"
+	CHUNK_PUSH = "chunk_push"
 )
 const (
 	DATA_TYP  = "data"
@@ -50,6 +53,17 @@ const (
 	version = "20170803"
 )
 
+type DevZero struct {
+}
+
+func (z DevZero) Read(b []byte) (n int, err error) {
+	for i := range b {
+		b[i] = 0
+	}
+
+	return len(b), nil
+}
+
 var bufPool = &sync.Pool{New: func() interface{} { return make([]byte, 1024*8) }}
 
 type httpProxy struct {
@@ -73,6 +87,8 @@ func (hp *httpProxy) handler() {
 	http.HandleFunc(PULL, hp.pull)
 	http.HandleFunc(PUSH, hp.push)
 	http.HandleFunc(PING, hp.ping)
+	http.HandleFunc(CHUNK_PULL, hp.chunkPull)
+	http.HandleFunc(CHUNK_PUSH, hp.chunkPush)
 }
 
 func (hp *httpProxy) ListenHTTPS(cert, key string) {
@@ -85,6 +101,11 @@ func (hp *httpProxy) Listen() {
 	hp.handler()
 	g.Infof("listen at:[%s]", hp.addr)
 	g.Fatal("ListenAndServe: ", http.ListenAndServe(hp.addr, nil))
+}
+
+func (hp *httpProxy) download(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", 100 << 20))
+	io.CopyN(w, DevZero{}, 100 << 20)
 }
 
 func (hp *httpProxy) verify(r *http.Request) error {
@@ -244,4 +265,47 @@ func (hp *httpProxy) connect(w http.ResponseWriter, r *http.Request) {
 		g.V(LINFO).Infof("disconnect %s", addr)
 	}()
 	WriteHTTPOK(w, proxyID)
+}
+
+
+// not used by now
+
+func (hp *httpProxy) chunkPush(w http.ResponseWriter, r *http.Request) {
+	if err := hp.before(w, r); err != nil {
+		return
+	}
+	// 消息不超过8k
+	chunk := bufPool.Get().([]byte)
+	defer bufPool.Put(chunk)
+	for {
+		n, err := r.Body.Read(chunk)
+		if n > 0 {
+			// unpack chunk
+		}
+		if err != nil {
+			g.V(LERROR).Info(err)
+			break
+		}
+	}
+}
+
+// not used by now
+
+func (hp *httpProxy) chunkPull(w http.ResponseWriter, r *http.Request) {
+	if err := hp.before(w, r); err != nil {
+		return
+	}
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Transfer-Encoding", "chunked")
+	flusher, _ := w.(http.Flusher)
+	flusher.Flush()
+	buf := make([]byte, 10)
+	for {
+		_, err := w.Write(buf)
+		if err != nil {
+			g.V(LERROR).Info(err)
+			break
+		}
+		flusher.Flush()
+	}
 }
