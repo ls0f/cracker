@@ -56,11 +56,11 @@ sh -c "$(curl https://raw.githubusercontent.com/ls0f/cracker/master/gen_key_cert
 ```
 
 ```
-./server -addr :443 -secret <password> -https -cert /etc/self-signed-cert.pem -key /etc/self-ca-key.pem -logtostderr
+./server -addr :443 -secret <password> -https -cert /etc/self-signed-cert.pem -key /etc/self-ca-key.pem -logtostderr -v=10
 ```
 
 ```
-./local -raddr https://example.com -secret <password> -cert /etc/self-signed-cert.pem -logtostderr
+./local -raddr https://example.com -secret <password> -cert /etc/self-signed-cert.pem -logtostderr -v=10
 ```
 
 
@@ -78,3 +78,6 @@ If you don't want to run the server side, I did for you :) you only need to run 
 # Next
 
 Play with [SwitchyOmega](https://github.com/FelisCatus/SwitchyOmega/releases)
+
+# ChatGPT
+[Free ChatGPT Proxy](https://ls0f.github.io/post/chatgpt%E4%BB%A3%E7%90%86/)
