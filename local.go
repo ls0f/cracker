@@ -16,7 +16,7 @@ import (
 	"gopkg.in/bufio.v1"
 )
 
-var hc = &http.Client{}
+var hc = &http.Client{Transport: http.DefaultTransport}
 
 func Init(cert string) {
 	if f, err := os.Stat(cert); err == nil && !f.IsDir() {
