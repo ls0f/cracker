@@ -3,7 +3,7 @@ module github.com/ls0f/cracker
 go 1.18
 
 require (
-	github.com/golang/glog v1.1.1
+	github.com/golang/glog v1.2.4
 	github.com/ls0f/proxylib v0.0.0-20180928021808-8e114c280464
 	github.com/pborman/uuid v1.2.1
 	github.com/stretchr/testify v1.8.2
